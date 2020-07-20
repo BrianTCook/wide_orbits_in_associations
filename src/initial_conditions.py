@@ -14,16 +14,12 @@ def initial_conditions(nGas, nStars, diskMass, rMin, rMax, Q, diskmassfrac):
 
 	#for now, sun and Neptune
 	stars_and_planets = new_solar_system()
-	nParticles = len(stars_and_planets)
 	Nep_ind = len(stars_and_planets) - 2 #avoids Pluto
-
-	indices_to_keep = [ 0, Nep_ind ]
-
-	stars_and_planets = [ stars_and_planets[i] for i in range(nParticles) if i in indices_to_keep ]
+	stars_and_planets = stars_and_planets.select(lambda n: n in ['SUN', 'NEPTUNE'], ['name'])
 
 	#set up converter, pp disk gas particles
 	np.random.seed(42)
-	converter_gas = nbody_system.nbody_to_si(diskMass, rMax)
-	gas = ProtoPlanetaryDisk(nGas, convert_nbody=converter_gas, Rmin=rMin, Rmax=rMax, q_out=Q, discfraction=diskmassfrac).result
+	converter_gas = nbody_system.nbody_to_si(diskMass, 1.|units.AU)
+	gas = ProtoPlanetaryDisk(nGas, convert_nbody=converter_gas, Rmin=rMin.value_in(units.AU), Rmax=rMax.value_in(units.AU), q_out=Q, discfraction=diskmassfrac).result
 
 	return stars_and_planets, gas
