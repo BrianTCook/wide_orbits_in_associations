@@ -1,5 +1,9 @@
 from __future__ import division, print_function
 import time
+import os
+
+#Circumvent a problem with using too many threads on OpenMPI
+os.environ['OMPI_MCA_rmaps_base_oversubscribe'] = 'yes'
 
 import numpy as np
 from scipy.stats import gaussian_kde
@@ -44,8 +48,18 @@ def simulation(nGas, nStars, diskMass, rMin, rMax, Q, diskmassfrac, tEnd, dt):
 	gravity.add_system(gravity_internal, (gravity_external,))
 	gravity.add_system(gravity_external, (gravity_internal,))	
 
-	channel_from_gravity_to_stars_and_planets = gravity.particles.new_channel_to(stars_and_planets)
-	channel_from_gravity_gas = gravity.particles.new_channel_to(gas)
+	ch_gravity_to_stars_and_planets = gravity.particles.new_channel_to(stars_and_planets)
+	ch_gravity_to_gas = gravity.particles.new_channel_to(gas)
+
+	hydro = Fi(converter_internal, mode='openmp')
+	hydro.gas_particles.add_particles(gas)
+	
+	ch_hydro_to_gas = hydro.gas_particles.new_channel_to(gas)
+	#channel_from_gas_to_hydro = gas.new_channel_to(hydro.gas_particles)
+
+	combined = bridge.Bridge()
+	combined.add_system(gravity, (hydro,))
+	combined.add_system(hydro, (gravity,))
 
 	sim_times_unitless = np.arange(0, tEnd.value_in(units.yr), dt.value_in(units.yr))
 	sim_times = [ t|units.yr for t in sim_times_unitless ]
@@ -75,19 +89,24 @@ def simulation(nGas, nStars, diskMass, rMin, rMax, Q, diskmassfrac, tEnd, dt):
 			plt.figure()
 			plt.gca().set_aspect('equal')
 			plt.scatter(xvals_gas, yvals_gas, s=8, marker='.', c=colors_gauss, cmap=cm, linewidths=0, label='Protoplanetary Disk')
-			sc = plt.scatter(xvals_stars_and_planets, yvals_stars_and_planets, s=12, marker='.', c='r', label='Star, Gas Giant')
+			sc = plt.scatter(xvals_stars_and_planets, yvals_stars_and_planets, s=12, marker='.', c='r', label=r'Star ($M=M_{\odot}$), Gas Giant ($M=M_{\mathrm{J}}$)')
 			plt.xlim(-120., 120.)
 			plt.ylim(-120., 120.)
 			plt.xlabel(r'$x$ (AU)', fontsize=12)
 			plt.ylabel(r'$y$ (AU)', fontsize=12)
-			plt.annotate(r'$t_{\mathrm{sim}} = %.02f$ yr'%(t.value_in(units.yr)), xy=(0.05, 0.95), xycoords='axes fraction', fontsize=10)
+			plt.annotate(r'$t_{\mathrm{sim}} = %.02f$ yr'%(t.value_in(units.yr)), xy=(0.05, 0.95), xycoords='axes fraction', fontsize=8)
+			plt.annotate(r'$M_{\mathrm{disk}} = %.02f M_{\odot}$'%(gas.mass.sum().value_in(units.MSun)), xy=(0.05, 0.9), xycoords='axes fraction', fontsize=8)
 			plt.legend(loc='lower right', fontsize=8)
+			plt.title('Young Planetary System, Gravity + Hydrodynamics', fontsize=10)
 			plt.tight_layout()
-			plt.savefig('ppdisk_w_Neptune_%s.png'%(str(i).rjust(5, '0')))
+			plt.savefig('ppdisk_w_Jupiter_%s.png'%(str(i).rjust(5, '0')))
 			plt.close()
 
-		gravity.evolve_model(t)
+		combined.evolve_model(t)
+		ch_gravity_to_gas.copy()
+		ch_gravity_to_stars_and_planets.copy()
+		ch_hydro_to_gas.copy()
 
-	gravity.stop()
+	combined.stop()
 
 	return 1
