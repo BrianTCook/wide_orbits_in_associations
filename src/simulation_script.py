@@ -3,7 +3,7 @@ import time
 import os
 
 #Circumvent a problem with using too many threads on OpenMPI
-os.environ['OMPI_MCA_rmaps_base_oversubscribe'] = 'yes'
+#os.environ['OMPI_MCA_rmaps_base_oversubscribe'] = 'yes'
 
 import numpy as np
 from scipy.stats import gaussian_kde
@@ -107,10 +107,10 @@ def simulation(nGas, nStars, diskMass, rMin, rMax, Q, diskmassfrac, tEnd, dt):
     
 	eps = 1 | units.RSun
 	gravity = Gravity(ph4, stars_and_planets, eps)
-	hydro = Hydro(gas, ism, eps)
+	hydro = Hydro(Fi, gas, eps)
 	model_time = 0 | units.yr
 
-	gravhydro = bridge.Bridge(use_threading=False)
+	gravhydro = bridge.Bridge()
 	gravhydro.add_system(gravity, (hydro,))
 	gravhydro.add_system(hydro, (gravity,))
 	gravhydro.timestep = 2*hydro.get_timestep()
@@ -121,6 +121,7 @@ def simulation(nGas, nStars, diskMass, rMin, rMax, Q, diskmassfrac, tEnd, dt):
 
 	while model_time < tEnd:
 
+		print('model_time: ', model_time)
 		xvals_gas = hydro.gas_particles.x.value_in(units.AU)
 		yvals_gas = hydro.gas_particles.y.value_in(units.AU)
 
