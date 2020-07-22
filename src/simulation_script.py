@@ -41,7 +41,7 @@ def simulation(nGas, nStars, diskMass, rMin, rMax, Q, diskmassfrac, tEnd, dt):
 	internal_bodies = gas
 	mass_internal = internal_bodies.mass.sum()
 	converter_internal = nbody_system.nbody_to_si(mass_internal, 1.|units.AU)
-	gravity_internal = BHTree(converter_internal)
+	gravity_internal = Hermite(converter_internal)
 	gravity_internal.particles.add_particles(gas)
 
 	gravity = bridge.Bridge()
@@ -55,7 +55,7 @@ def simulation(nGas, nStars, diskMass, rMin, rMax, Q, diskmassfrac, tEnd, dt):
 	hydro.gas_particles.add_particles(gas)
 	
 	ch_hydro_to_gas = hydro.gas_particles.new_channel_to(gas)
-	#channel_from_gas_to_hydro = gas.new_channel_to(hydro.gas_particles)
+	ch_gas_to_hydro = gas.new_channel_to(hydro.gas_particles)
 
 	combined = bridge.Bridge()
 	combined.add_system(gravity, (hydro,))
@@ -89,7 +89,7 @@ def simulation(nGas, nStars, diskMass, rMin, rMax, Q, diskmassfrac, tEnd, dt):
 			plt.figure()
 			plt.gca().set_aspect('equal')
 			plt.scatter(xvals_gas, yvals_gas, s=10, marker='.', c=colors_gauss, cmap=cm, linewidths=0, label='Protoplanetary Disk')
-			plt.scatter(xvals_stars_and_planets, yvals_stars_and_planets, s=16, marker='*', c='k', label=r'Star ($M=M_{\odot}$), Gas Giant ($M=M_{\mathrm{J}}$)')
+			plt.scatter(xvals_stars_and_planets, yvals_stars_and_planets, s=16, marker='*', c='k', label=r'Star ($M=M_{\odot}$)')
 			plt.xlim(-120., 120.)
 			plt.ylim(-120., 120.)
 			plt.xlabel(r'$x$ (AU)', fontsize=12)
@@ -97,9 +97,9 @@ def simulation(nGas, nStars, diskMass, rMin, rMax, Q, diskmassfrac, tEnd, dt):
 			plt.annotate(r'$t_{\mathrm{sim}} = %.02f$ yr'%(t.value_in(units.yr)), xy=(0.05, 0.95), xycoords='axes fraction', fontsize=8)
 			plt.annotate(r'$M_{\mathrm{disk}} = %.02f M_{\odot}$'%(gas.mass.sum().value_in(units.MSun)), xy=(0.05, 0.9), xycoords='axes fraction', fontsize=8)
 			plt.legend(loc='lower right', fontsize=8)
-			plt.title('Young Planetary System, Gravity + Hydrodynamics', fontsize=10)
+			plt.title('Young Protoplanetary Disk, Gravity + Hydrodynamics', fontsize=10)
 			plt.tight_layout()
-			plt.savefig('ppdisk_w_Jupiter_%s.png'%(str(i).rjust(5, '0')))
+			plt.savefig('ppdisk_w_nothing_%s.png'%(str(i).rjust(5, '0')))
 			plt.close()
 
 		combined.evolve_model(t)
