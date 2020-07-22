@@ -64,7 +64,7 @@ def simulation(nGas, nStars, diskMass, rMin, rMax, Q, diskmassfrac, tEnd, dt):
 	sim_times_unitless = np.arange(0, tEnd.value_in(units.yr), dt.value_in(units.yr))
 	sim_times = [ t|units.yr for t in sim_times_unitless ]
 
-	cm = plt.cm.get_cmap('viridis')
+	cm = plt.cm.get_cmap('rainbow')
 
 	for i, t in enumerate(sim_times):
 
@@ -88,8 +88,8 @@ def simulation(nGas, nStars, diskMass, rMin, rMax, Q, diskmassfrac, tEnd, dt):
 
 			plt.figure()
 			plt.gca().set_aspect('equal')
-			plt.scatter(xvals_gas, yvals_gas, s=8, marker='.', c=colors_gauss, cmap=cm, linewidths=0, label='Protoplanetary Disk')
-			sc = plt.scatter(xvals_stars_and_planets, yvals_stars_and_planets, s=12, marker='.', c='r', label=r'Star ($M=M_{\odot}$), Gas Giant ($M=M_{\mathrm{J}}$)')
+			plt.scatter(xvals_gas, yvals_gas, s=10, marker='.', c=colors_gauss, cmap=cm, linewidths=0, label='Protoplanetary Disk')
+			plt.scatter(xvals_stars_and_planets, yvals_stars_and_planets, s=16, marker='*', c='k', label=r'Star ($M=M_{\odot}$), Gas Giant ($M=M_{\mathrm{J}}$)')
 			plt.xlim(-120., 120.)
 			plt.ylim(-120., 120.)
 			plt.xlabel(r'$x$ (AU)', fontsize=12)
