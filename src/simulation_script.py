@@ -15,6 +15,7 @@ import matplotlib.pyplot as plt
 from amuse.lab import *
 from amuse.couple import bridge
 from initial_conditions import initial_conditions
+from amuse_classes, import BaseCode, Gravity, Hydro
 
 def simulation(nGas, nStars, diskMass, rMin, rMax, Q, diskmassfrac, tEnd, dt):
 
@@ -31,6 +32,7 @@ def simulation(nGas, nStars, diskMass, rMin, rMax, Q, diskmassfrac, tEnd, dt):
 
 	stars_and_planets, gas = initial_conditions(nGas, nStars, diskMass, rMin, rMax, Q, diskmassfrac)
 
+    '''
 	external_bodies = stars_and_planets
 	mass_external = external_bodies.mass.sum()
 	a_init = 10.|units.AU
@@ -57,15 +59,66 @@ def simulation(nGas, nStars, diskMass, rMin, rMax, Q, diskmassfrac, tEnd, dt):
 	ch_hydro_to_gas = hydro.gas_particles.new_channel_to(gas)
 	ch_gas_to_hydro = gas.new_channel_to(hydro.gas_particles)
 
-	combined = bridge.Bridge()
+	combined = bridge.Bridge(threading=False)
 	combined.add_system(gravity, (hydro,))
 	combined.add_system(hydro, (gravity,))
 
 	sim_times_unitless = np.arange(0, tEnd.value_in(units.yr), dt.value_in(units.yr))
 	sim_times = [ t|units.yr for t in sim_times_unitless ]
+    '''
+    
+    eps = 1 | units.RSun
+    gravity = Gravity(ph4, stars_and_planets, eps)
+    hydro = Hydro(gas, ism, eps)
+    model_time = 0 | units.yr
+    
+    filename = "gravhydro.hdf5"
+    write_set_to_file(stars.savepoint(model_time), filename, "amuse")
+    write_set_to_file(ism, filename, "amuse")
+    
+    gravhydro = bridge.Bridge(use_threading=False)
+    gravhydro.add_system(gravity, (hydro,))
+    gravhydro.add_system(hydro, (gravity,))
+    gravhydro.timestep = 2*hydro.get_timestep()
+    
+    cm = plt.cm.get_cmap('rainbow')
+    
+    while model_time < tEnd:
 
-	cm = plt.cm.get_cmap('rainbow')
+		xvals_gas = hydro.gas_particles.x.value_in(units.AU)
+		yvals_gas = hydro.gas_particles.y.value_in(units.AU)
 
+		xvals_stars_and_planets = gravity.particles.x.value_in(units.AU)
+		yvals_stars_and_planets = gravity.particles.y.value_in(units.AU)
+
+		xy = np.vstack([xvals_gas, yvals_gas])
+		colors_gauss = gaussian_kde(xy)(xy)
+
+		plt.figure()
+		plt.gca().set_aspect('equal')
+		plt.scatter(xvals_gas, yvals_gas, s=10, marker='.', c=colors_gauss, cmap=cm, linewidths=0, label='Protoplanetary Disk')
+		plt.scatter(xvals_stars_and_planets, yvals_stars_and_planets, s=16, marker='*', c='k', label=r'Star ($M=M_{\odot}$)')
+		plt.xlim(-120., 120.)
+		plt.ylim(-120., 120.)
+		plt.xlabel(r'$x$ (AU)', fontsize=12)
+		plt.ylabel(r'$y$ (AU)', fontsize=12)
+		plt.annotate(r'$t_{\mathrm{sim}} = %.02f$ yr'%(t.value_in(units.yr)), xy=(0.05, 0.95), xycoords='axes fraction', fontsize=8)
+		plt.annotate(r'$M_{\mathrm{disk}} = %.02f M_{\odot}$'%(gas.mass.sum().value_in(units.MSun)), xy=(0.05, 0.9), xycoords='axes fraction', fontsize=8)
+		plt.legend(loc='lower right', fontsize=8)
+		plt.title('Young Protoplanetary Disk, Gravity + Hydrodynamics', fontsize=10)
+		plt.tight_layout()
+		plt.savefig('ppdisk_w_nothing_%s.png'%(str(i).rjust(5, '0')))
+		plt.close()
+        
+        model_time += 10*gravhydro.timestep
+        gravhydro.evolve_model(model_time)
+        gravity.copy_to_framework()
+        hydro.copy_to_framework()
+
+    gravity.stop()
+    hydro.stop()
+    
+    '''
 	for i, t in enumerate(sim_times):
 
 		if i%10 == 0:
@@ -108,5 +161,6 @@ def simulation(nGas, nStars, diskMass, rMin, rMax, Q, diskmassfrac, tEnd, dt):
 		ch_hydro_to_gas.copy()
 
 	combined.stop()
+    '''
 
 	return 1
