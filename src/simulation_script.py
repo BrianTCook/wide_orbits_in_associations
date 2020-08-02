@@ -16,80 +16,6 @@ from amuse.lab import *
 from amuse.couple import bridge
 from initial_conditions import initial_conditions
 
-###BOOKLISTSTART1###
-class BaseCode:
-    def __init__(self, code, particles, eps=0|units.RSun):
-
-        self.local_particles = particles
-        m = self.local_particles.mass.sum()
-        l = self.local_particles.position.length()
-        self.converter = nbody_system.nbody_to_si(m, l)
-        self.code = code(self.converter)
-        self.code.parameters.epsilon_squared = eps**2
-
-    def evolve_model(self, time):
-        self.code.evolve_model(time)
-    def copy_to_framework(self):
-        self.channel_to_framework.copy()
-    def get_gravity_at_point(self, r, x, y, z):
-        return self.code.get_gravity_at_point(r, x, y, z)
-    def get_potential_at_point(self, r, x, y, z):
-        return self.code.get_potential_at_point(r, x, y, z)
-    def get_timestep(self):
-        return self.code.parameters.timestep
-    @property
-    def model_time(self):            
-        return self.code.model_time
-    @property
-    def particles(self):
-        return self.code.particles
-    @property
-    def total_energy(self):
-        return self.code.kinetic_energy + self.code.potential_energy
-    @property
-    def stop(self):
-        return self.code.stop
-###BOOKLISTSTOP1###
-
-###BOOKLISTSTART2###
-class Gravity(BaseCode):
-    def __init__(self, code, particles, eps=0|units.RSun):
-        BaseCode.__init__(self, code, particles, eps)
-        self.code.particles.add_particles(self.local_particles)
-        self.channel_to_framework \
-            = self.code.particles.new_channel_to(self.local_particles)
-        self.channel_from_framework \
-            = self.local_particles.new_channel_to(self.code.particles)
-        self.initial_total_energy = self.total_energy
-###BOOKLISTSTOP2###
-
-###BOOKLISTSTART3###
-class Hydro(BaseCode):
-    def __init__(self, code, particles, eps=0|units.RSun,
-                 dt=None, Rbound=None):
-        BaseCode.__init__(self, code, particles, eps)
-        self.channel_to_framework \
-            = self.code.gas_particles.new_channel_to(self.local_particles)
-        self.channel_from_framework \
-            = self.local_particles.new_channel_to(self.code.gas_particles)
-        self.code.gas_particles.add_particles(particles)
-        m = self.local_particles.mass.sum()
-        l = self.code.gas_particles.position.length()
-        if Rbound is None:
-            Rbound = 10*l
-        self.code.parameters.periodic_box_size = Rbound
-        if dt is None:
-            dt = 0.01*numpy.sqrt(l**3/(constants.G*m))
-        self.code.parameters.timestep = dt/8.
-        self.initial_total_energy = self.total_energy
-    @property
-    def total_energy(self):
-        return self.code.kinetic_energy \
-            + self.code.potential_energy \
-            + self.code.thermal_energy
-###BOOKLISTSTOP3###
-
-
 def simulation(nGas, nStars, diskMass, rMin, rMax, Q, diskmassfrac, tEnd, dt):
 
 	'''
@@ -106,51 +32,75 @@ def simulation(nGas, nStars, diskMass, rMin, rMax, Q, diskmassfrac, tEnd, dt):
 	stars_and_planets, gas = initial_conditions(nGas, nStars, diskMass, rMin, rMax, Q, diskmassfrac)
     
 	eps = 1 | units.RSun
-	gravity = Gravity(ph4, stars_and_planets, eps)
-	hydro = Hydro(Fi, gas, eps)
-	model_time = 0 | units.yr
+
+	mass_gravity = stars_and_planets.mass.sum()
+	a_init = 10.|units.AU
+	converter_gravity = nbody_system.nbody_to_si(mass_gravity, a_init)
+	
+	gravity = ph4(converter_gravity)
+	gravity.particles.add_particles(stars_and_planets)
+
+	internal_bodies = gas
+	mass_gas = gas.mass.sum()
+	converter_hydro = nbody_system.nbody_to_si(mass_gas, 1.|units.AU)
+
+	hydro = Fi(converter_hydro, mode='openmp')
+	hydro.gas_particles.add_particles(gas)
+
+	gravity.parameters.epsilon_squared = eps**2
+	#hydro.parameters.epsilon_squared = eps**2
+
+	gravity_to_framework = gravity.particles.new_channel_to(stars_and_planets)
+	hydro_to_framework = hydro.gas_particles.new_channel_to(gas)
 
 	gravhydro = bridge.Bridge()
 	gravhydro.add_system(gravity, (hydro,))
 	gravhydro.add_system(hydro, (gravity,))
-	gravhydro.timestep = 2*hydro.get_timestep()
+	gravhydro.timestep = dt
 
-	print('gravhydro.timestep: ', gravhydro.timestep)
+	sim_times_unitless = np.arange(0., tEnd.value_in(units.yr), dt.value_in(units.yr))
+	sim_times = [ t|units.yr for t in sim_times_unitless ]
 
 	cm = plt.cm.get_cmap('rainbow')
 
-	while model_time < tEnd:
+	for j, t in enumerate(sim_times):
 
-		print('model_time: ', model_time)
-		xvals_gas = hydro.gas_particles.x.value_in(units.AU)
-		yvals_gas = hydro.gas_particles.y.value_in(units.AU)
+		if j%10 == 0:
 
-		xvals_stars_and_planets = gravity.particles.x.value_in(units.AU)
-		yvals_stars_and_planets = gravity.particles.y.value_in(units.AU)
+			print('simulation time: ', t)
+			print('wall time: %.02f minutes'%((time.time()-t0)/60.))
+			print()
+			
+			xvals_gas = gas.x.value_in(units.AU)
+			yvals_gas = gas.y.value_in(units.AU)
 
-		xy = np.vstack([xvals_gas, yvals_gas])
-		colors_gauss = gaussian_kde(xy)(xy)
+			xvals_stars_and_planets = stars_and_planets.x.value_in(units.AU)
+			yvals_stars_and_planets = stars_and_planets.y.value_in(units.AU)
 
-		plt.figure()
-		plt.gca().set_aspect('equal')
-		plt.scatter(xvals_gas, yvals_gas, s=10, marker='.', c=colors_gauss, cmap=cm, linewidths=0, label='Protoplanetary Disk')
-		plt.scatter(xvals_stars_and_planets, yvals_stars_and_planets, s=16, marker='*', c='k', label=r'Star ($M=M_{\odot}$)')
-		plt.xlim(-120., 120.)
-		plt.ylim(-120., 120.)
-		plt.xlabel(r'$x$ (AU)', fontsize=12)
-		plt.ylabel(r'$y$ (AU)', fontsize=12)
-		plt.annotate(r'$t_{\mathrm{sim}} = %.02f$ yr'%(t.value_in(units.yr)), xy=(0.05, 0.95), xycoords='axes fraction', fontsize=8)
-		plt.annotate(r'$M_{\mathrm{disk}} = %.02f M_{\odot}$'%(gas.mass.sum().value_in(units.MSun)), xy=(0.05, 0.9), xycoords='axes fraction', fontsize=8)
-		plt.legend(loc='lower right', fontsize=8)
-		plt.title('Young Protoplanetary Disk, Gravity + Hydrodynamics', fontsize=10)
-		plt.tight_layout()
-		plt.savefig('ppdisk_w_nothing_%s.png'%(str(i).rjust(5, '0')))
-		plt.close()
+			xy = np.vstack([xvals_gas, yvals_gas])
+			colors_gauss = gaussian_kde(xy)(xy)
 
-		model_time += 10*gravhydro.timestep
-		gravhydro.evolve_model(model_time)
-		gravity.copy_to_framework()
-		hydro.copy_to_framework()
+			plt.figure()
+			plt.gca().set_aspect('equal')
+			plt.scatter(xvals_gas, yvals_gas, s=6, marker='.', c=colors_gauss, cmap=cm, linewidths=0, label='Protoplanetary Disk')
+			plt.scatter(xvals_stars_and_planets[0], yvals_stars_and_planets[0], s=16, marker='*', c='k', label=r'Star ($M=M_{\odot}$)')
+			plt.scatter(xvals_stars_and_planets[0:], yvals_stars_and_planets[0:], s=16, marker='.', c='k', label=r'Gas Giants (Solar System)')
+			plt.xlim(-120., 120.)
+			plt.ylim(-120., 120.)
+			plt.xlabel(r'$x$ (AU)', fontsize=12)
+			plt.ylabel(r'$y$ (AU)', fontsize=12)
+			plt.annotate(r'$t_{\mathrm{sim}} = %.02f$ yr'%(t.value_in(units.yr)), xy=(0.05, 0.95), xycoords='axes fraction', fontsize=8)
+			plt.annotate(r'$M_{\mathrm{disk}} = %.02f M_{\odot}$'%(gas.mass.sum().value_in(units.MSun)), xy=(0.05, 0.9), xycoords='axes fraction', fontsize=8)
+			plt.annotate(r'$N_{\mathrm{SPH}} = %i$'%(nGas), xy=(0.05, 0.85), xycoords='axes fraction', fontsize=8)
+			plt.legend(loc='lower right', fontsize=8)
+			plt.title('Young Planetary System, Gravity + Hydrodynamics', fontsize=10)
+			plt.tight_layout()
+			plt.savefig('ppdisk_only_%s.png'%(str(j).rjust(5, '0')))
+			plt.close()
+
+		gravhydro.evolve_model(t)
+		gravity_to_framework.copy()
+		hydro_to_framework.copy()
 
 	gravity.stop()
 	hydro.stop()
@@ -237,4 +187,86 @@ ch_gravity_to_stars_and_planets.copy()
 ch_hydro_to_gas.copy()
 
 combined.stop()
+
+###BOOKLISTSTART1###
+class BaseCode:
+	def __init__(self, code, particles, eps=0|units.RSun):
+
+		self.local_particles = particles
+		m = self.local_particles.mass.sum()
+		l = self.local_particles.position.length()
+		self.converter = nbody_system.nbody_to_si(m, l)
+		self.code = code(self.converter)
+
+		if self.code == Fi:
+			self.code = Fi(converter=self.converter, mode='openmp')
+
+			print('Fi code: ', self.code)
+
+		self.code.parameters.epsilon_squared = eps**2
+
+	def evolve_model(self, time):
+		self.code.evolve_model(time)
+	def copy_to_framework(self):
+		self.channel_to_framework.copy()
+	def get_gravity_at_point(self, r, x, y, z):
+		return self.code.get_gravity_at_point(r, x, y, z)
+	def get_potential_at_point(self, r, x, y, z):
+		return self.code.get_potential_at_point(r, x, y, z)
+	def get_timestep(self):
+		return self.code.parameters.timestep
+	@property
+	def model_time(self):            
+		return self.code.model_time
+	@property
+	def particles(self):
+		return self.code.particles
+	@property
+	def total_energy(self):
+		return self.code.kinetic_energy + self.code.potential_energy
+	@property
+	def stop(self):
+		return self.code.stop
+###BOOKLISTSTOP1###
+
+###BOOKLISTSTART2###
+class Gravity(BaseCode):
+    def __init__(self, code, particles, eps=0|units.RSun):
+        BaseCode.__init__(self, code, particles, eps)
+        self.code.particles.add_particles(self.local_particles)
+        self.channel_to_framework \
+            = self.code.particles.new_channel_to(self.local_particles)
+        self.channel_from_framework \
+            = self.local_particles.new_channel_to(self.code.particles)
+        self.initial_total_energy = self.total_energy
+###BOOKLISTSTOP2###
+
+###BOOKLISTSTART3###
+class Hydro(BaseCode):
+
+	def __init__(self, code, particles, eps=0|units.RSun, dt=None, Rbound=None):
+		BaseCode.__init__(self, code, particles, eps)
+		self.channel_to_framework \
+		    = self.code.gas_particles.new_channel_to(self.local_particles)
+		self.channel_from_framework \
+		    = self.local_particles.new_channel_to(self.code.gas_particles)
+		self.code.gas_particles.add_particles(particles)
+
+		m = self.local_particles.mass.sum()
+		l = self.code.gas_particles.position.length()
+
+		if Rbound is None:
+		    Rbound = 10*l
+		self.code.parameters.periodic_box_size = Rbound
+		if dt is None:
+		    dt = 0.01*np.sqrt(l**3/(constants.G*m))
+		self.code.parameters.timestep = dt/8.
+		self.initial_total_energy = self.total_energy
+
+	@property
+	def total_energy(self):
+		return self.code.kinetic_energy \
+		    + self.code.potential_energy \
+		    + self.code.thermal_energy
+###BOOKLISTSTOP3###
 '''

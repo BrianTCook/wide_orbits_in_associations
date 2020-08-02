@@ -14,8 +14,8 @@ def initial_conditions(nGas, nStars, diskMass, rMin, rMax, Q, diskmassfrac):
 
 	#for now, sun and Neptune
 	stars_and_planets = new_solar_system()
-	Nep_ind = len(stars_and_planets) - 2 #avoids Pluto
 	stars_and_planets = stars_and_planets.select(lambda n: n in ['SUN'], ['name'])
+	#'JUPITER', 'SATURN', 'URANUS', 'NEPTUNE
 
 	#set up converter, pp disk gas particles
 	np.random.seed(42)
