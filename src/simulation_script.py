@@ -93,7 +93,7 @@ def simulation(t_end, dt):
 			plt.ylim(-30., 30.)
 			plt.xlabel(r'$x$ (pc)', fontsize=12)
 			plt.ylabel(r'$y$ (pc)', fontsize=12)
-			plt.annotate(r'$t_{\rm sim} = %.02f$ yr'%(t.value_in(units.yr)), xy=(0.05, 0.95), xycoords='axes fraction', fontsize=8)
+			plt.annotate(r'$t_{\rm sim} = %.02f$ Myr'%(t.value_in(units.Myr)), xy=(0.05, 0.95), xycoords='axes fraction', fontsize=8)
 			plt.annotate(r'$M_{\rm LCC} = %.02f M_{\odot}$'%(stars_and_planets.mass.sum().value_in(units.MSun)), xy=(0.05, 0.9), xycoords='axes fraction', fontsize=8)
 			plt.legend(loc='lower right', fontsize=8)
 			plt.title('Lower Centaurus Crux model', fontsize=10)
