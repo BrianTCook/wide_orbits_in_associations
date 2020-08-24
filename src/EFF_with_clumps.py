@@ -50,6 +50,10 @@ def xyz_coords(Nstars, a, gamma):
     phivals = [ 2*np.pi*np.random.random() for i in range(Nstars) ]
     thetavals = [ np.arccos((2.*np.random.random()-1)) for i in range(Nstars) ]
 
+    xvals = [ rvals[i] * np.cos(phivals[i]) * np.sin(thetavals[i]) for i in range(Nstars) ]
+    yvals = [ rvals[i] * np.sin(phivals[i]) * np.sin(thetavals[i]) for i in range(Nstars) ]
+    zvals = [ rvals[i] * np.cos(thetavals[i]) for i in range(Nstars) ]
+
     return xvals, yvals, zvals
     
     
