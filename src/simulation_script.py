@@ -17,7 +17,7 @@ from amuse.couple import bridge
 from initial_conditions import initial_conditions
 from EFF_with_clumps import LCC_maker
 
-def simulation(t_end, dt):
+def simulation(Nstars, t_end, dt):
 
 	'''
 	for now, just makes one star
@@ -31,7 +31,7 @@ def simulation(t_end, dt):
 	t0 = time.time()
 
 	#stars_and_planets, gas = initial_conditions(nGas, nStars, diskMass, rMin, rMax, Q, diskmassfrac)
-    stars_and_planets = LCC_maker()
+	stars_and_planets = LCC_maker(Nstars)
 
 	eps = 1 | units.RSun
 
@@ -72,7 +72,7 @@ def simulation(t_end, dt):
 			print('simulation time: ', t)
 			print('wall time: %.02f minutes'%((time.time()-t0)/60.))
 			print()
-			
+
 			#xvals_gas = gas.x.value_in(units.AU)
 			#yvals_gas = gas.y.value_in(units.AU)
 
@@ -89,7 +89,7 @@ def simulation(t_end, dt):
 			#plt.scatter(xvals_stars_and_planets[0:], yvals_stars_and_planets[0:], s=16, marker='.', c='k', label=r'Gas Giants (Solar System)')
 			#plt.scatter(xvals_stars_and_planets[0], yvals_stars_and_planets[0], s=16, marker='*', c='k', label=r'Star ($M=M_{\odot}$)')
 
-            plt.xlim(-30., 30.)
+			plt.xlim(-30., 30.)
 			plt.ylim(-30., 30.)
 			plt.xlabel(r'$x$ (pc)', fontsize=12)
 			plt.ylabel(r'$y$ (pc)', fontsize=12)
@@ -102,7 +102,7 @@ def simulation(t_end, dt):
 			plt.close()
 
 		#gravhydro.evolve_model(t)
-        gravity.evolve_model(t)
+		gravity.evolve_model(t)
 		gravity_to_framework.copy()
 		#hydro_to_framework.copy()
 

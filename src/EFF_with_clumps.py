@@ -28,7 +28,7 @@ def EFF(r, a, gamma):
         
         return (1 + (r/a)**2.)**(-gamma/2.)
     
-def xyz_coords(a, gamma, Nstars):
+def xyz_coords(Nstars, a, gamma):
     
     rvals = []
     
@@ -49,11 +49,11 @@ def xyz_coords(a, gamma, Nstars):
                     
     phivals = [ 2*np.pi*np.random.random() for i in range(Nstars) ]
     thetavals = [ np.arccos((2.*np.random.random()-1)) for i in range(Nstars) ]
-    
+
     return xvals, yvals, zvals
     
     
-def uvw_coords(sigma_u, sigma_v, sigma_w, Nstars):
+def uvw_coords(Nstars, sigma_u, sigma_v, sigma_w):
     
     uvals = np.random.normal(loc=0., scale=sigma_U, size=(Nstars,))
     vvals = np.random.normal(loc=0., scale=sigma_U, size=(Nstars,))
@@ -62,7 +62,7 @@ def uvw_coords(sigma_u, sigma_v, sigma_w, Nstars):
     return uvals, vvals, wvals
 
 
-def LCC_maker():
+def LCC_maker(Nstars):
     
     stars = Particles(Nstars)
                     
@@ -70,10 +70,8 @@ def LCC_maker():
     a, gamma = 50.1, 15.2
     sigma_U, sigma_V, sigma_W = 1.89, 0.9, 0.51
     
-    Nstars = 1200
-    
-    xs, ys, zs = xyz_coords(a, gamma, Nstars)
-    us, vs, ws = uvw_coords(sigma_u, sigma_v, sigma_w, Nstars)
+    xs, ys, zs = xyz_coords(Nstars, a, gamma)
+    us, vs, ws = uvw_coords(Nstars, sigma_u, sigma_v, sigma_w)
     
     #Kroupa distribution, biggest stars are A-type stars
     masses = new_kroupa_mass_distribution(Nstars, 17.5|units.MSun)

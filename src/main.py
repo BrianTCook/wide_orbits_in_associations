@@ -13,7 +13,7 @@ from amuse.units.optparse import OptionParser
 
 from simulation_script import simulation
 
-def main(nGas, nStars, diskMass, rMin, rMax, Q, diskmassfrac, tEnd, dt):
+def main(Nstars, t_end, dt):
 
 	#diskMass = diskMass|units.MSun
 	#rMin = rMin|units.AU
@@ -21,8 +21,8 @@ def main(nGas, nStars, diskMass, rMin, rMax, Q, diskmassfrac, tEnd, dt):
 	t_end = t_end|units.Myr
 	dt = dt|units.Myr
 
-	simulation(t_end, dt)
-    #nGas, nStars, diskMass, rMin, rMax, Q, diskmassfrac, 
+	simulation(Nstars, t_end, dt)
+	#nGas, nStars, diskMass, rMin, rMax, Q, diskmassfrac, 
 
 def new_option_parser():
 
@@ -32,7 +32,7 @@ def new_option_parser():
 
 	optparser = OptionParser()
 	#optparser.add_option('--nGas', dest='nGas', type='int', default=50000)
-	#optparser.add_option('--nStars', dest='nStars', type='int', default=1)
+	optparser.add_option('--Nstars', dest='Nstars', type='int', default=1200)
 	#optparser.add_option('--diskMass', dest='diskMass', type='float', default=1.0)
 	#optparser.add_option('--rMin', dest='rMin', type='float', default=1.)
 	#optparser.add_option('--rMax', dest='rMax', type='float', default=100.)
