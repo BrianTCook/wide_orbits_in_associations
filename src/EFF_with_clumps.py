@@ -40,15 +40,18 @@ def xyz_coords(Nstars, Nclumps, a, gamma):
     
     clump_populations = [ math.ceil(40.*numpy.random.random()) + 10 for i in range(Nclumps) ]
     
-    Nbins = 51
+    print('clump populations: ', clump_populations)
+    
+    Nbins = 26
     radial_bins = np.linspace(0., 1.5*a, Nbins+1) #edges of bins in parsecs
     bin_populations =  [ 0 for i in range(Nbins) ]
 
 	while len(rvals) < Nstars:
 
-		flag = 0
+		whole_flag = 0
+        clump_flag = 0
 
-		while flag == 0:
+		while whole_flag == 0:
 
 			rval_proposed = 1.5*a*np.random.rand()
 			yval_a, yval_b = EFF(rval_proposed, a, gamma), np.random.rand()
@@ -59,7 +62,7 @@ def xyz_coords(Nstars, Nclumps, a, gamma):
                 j = 0
             
                 #finds the appropriate bin
-                if radial_bins[j] > rval_proposed or radial_bins[j+1] < rval_proposed:
+                if radial_bins[j] > rval_proposed or radial_bins[j+1] <= rval_proposed:
                     
                     j += 1
                     
@@ -67,16 +70,35 @@ def xyz_coords(Nstars, Nclumps, a, gamma):
                     
                     bin_middle = 0.5*(radial_bins[j]+radial_bins[j+1])
                     
-                    if bin_populations[j] < enclosed_number(Nstars, bin_middle, a, gamma):
+                    #fills bin with a clump or just a single star
+                    if clump_flag < Nclumps:
                     
-                        rvals.append(rval_proposed)
+                        new_members = clump_populations[clump_flag]
+                    
+                    else:
+                    
+                        new_members = 1
+                        
+                    new_bin_population = bin_populations[j] + new_members
+                    
+                    if new_bin_population < enclosed_number(Nstars, bin_middle, a, gamma):
+                        
+                        rvals.append([rval_proposed for k in range(new_members)])
+                        phivals.append([2*np.pi*np.random.random() for k in range(new_members)])
+                        thetavals.append([np.arccos((2.*np.random.random()-1))for k in range(new_members)])
+                        
                         bin_populations[j] += 1
+                        clump_flag += 1
     		    		
                     flag = 1
                     
+                print('we should not be here')
+                flag = 1 #should not get here
 
-	phivals = [ 2*np.pi*np.random.random() for i in range(Nstars) ]
-	thetavals = [ np.arccos((2.*np.random.random()-1)) for i in range(Nstars) ]
+    #unperturbed, clump members are right on top of each other
+    rvals = [j for i in rvals for j in i]
+    thetavals = [j for i in thetavals for j in i]
+    phivals = [j for i in phivals for j in i]
 
 	xvals = [ rvals[i] * np.cos(phivals[i]) * np.sin(thetavals[i]) for i in range(Nstars) ]
 	yvals = [ rvals[i] * np.sin(phivals[i]) * np.sin(thetavals[i]) for i in range(Nstars) ]

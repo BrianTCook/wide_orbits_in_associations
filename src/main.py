@@ -33,6 +33,7 @@ def new_option_parser():
 	optparser = OptionParser()
 	#optparser.add_option('--nGas', dest='nGas', type='int', default=50000)
 	optparser.add_option('--Nstars', dest='Nstars', type='int', default=1200)
+    optparser.add_option('--Nclumps', dest='Nclumps', type='int', default=10)
 	#optparser.add_option('--diskMass', dest='diskMass', type='float', default=1.0)
 	#optparser.add_option('--rMin', dest='rMin', type='float', default=1.)
 	#optparser.add_option('--rMax', dest='rMax', type='float', default=100.)
