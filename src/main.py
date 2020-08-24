@@ -15,13 +15,14 @@ from simulation_script import simulation
 
 def main(nGas, nStars, diskMass, rMin, rMax, Q, diskmassfrac, tEnd, dt):
 
-	diskMass = diskMass|units.MSun
-	rMin = rMin|units.AU
-	rMax = rMax|units.AU
-	tEnd = tEnd|units.yr
-	dt = dt|units.yr
+	#diskMass = diskMass|units.MSun
+	#rMin = rMin|units.AU
+	#rMax = rMax|units.AU
+	t_end = t_end|units.Myr
+	dt = dt|units.Myr
 
-	simulation(nGas, nStars, diskMass, rMin, rMax, Q, diskmassfrac, tEnd, dt)
+	simulation(t_end, dt)
+    #nGas, nStars, diskMass, rMin, rMax, Q, diskmassfrac, 
 
 def new_option_parser():
 
@@ -30,16 +31,16 @@ def new_option_parser():
 	'''
 
 	optparser = OptionParser()
-	optparser.add_option('--nGas', dest='nGas', type='int', default=50000)
-	optparser.add_option('--nStars', dest='nStars', type='int', default=1)
-	optparser.add_option('--diskMass', dest='diskMass', type='float', default=1.0)
-	optparser.add_option('--rMin', dest='rMin', type='float', default=1.)
-	optparser.add_option('--rMax', dest='rMax', type='float', default=100.)
-	optparser.add_option('--Q', dest='Q', type='float', default=1.)
-	optparser.add_option('--diskmassfrac', dest='diskmassfrac', type='float', default=1.)
+	#optparser.add_option('--nGas', dest='nGas', type='int', default=50000)
+	#optparser.add_option('--nStars', dest='nStars', type='int', default=1)
+	#optparser.add_option('--diskMass', dest='diskMass', type='float', default=1.0)
+	#optparser.add_option('--rMin', dest='rMin', type='float', default=1.)
+	#optparser.add_option('--rMax', dest='rMax', type='float', default=100.)
+	#optparser.add_option('--Q', dest='Q', type='float', default=1.)
+	#optparser.add_option('--diskmassfrac', dest='diskmassfrac', type='float', default=1.)
 	
-	optparser.add_option('--tEnd', dest='tEnd', type='float', default=100.)
-	optparser.add_option('--dt', dest='dt', type='float', default=0.1) #years
+	optparser.add_option('--t_end', dest='t_end', type='float', default=20.)
+	optparser.add_option('--dt', dest='dt', type='float', default=0.01) #megayears
 
 	return optparser
 

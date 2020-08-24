@@ -17,7 +17,7 @@ from amuse.couple import bridge
 from initial_conditions import initial_conditions
 from EFF_with_clumps import LCC_maker
 
-def simulation(Nstars, t_end, dt):
+def simulation(t_end, dt):
 
 	'''
 	for now, just makes one star
@@ -60,8 +60,8 @@ def simulation(Nstars, t_end, dt):
 	#gravhydro.add_system(hydro, (gravity,))
 	#gravhydro.timestep = dt
 
-	sim_times_unitless = np.arange(0., t_end.value_in(units.yr), dt.value_in(units.yr))
-	sim_times = [ t|units.yr for t in sim_times_unitless ]
+	sim_times_unitless = np.arange(0., t_end.value_in(units.Myr), dt.value_in(units.Myr))
+	sim_times = [ t|units.Myr for t in sim_times_unitless ]
 
 	cm = plt.cm.get_cmap('rainbow')
 
