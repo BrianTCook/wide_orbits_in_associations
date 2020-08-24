@@ -19,7 +19,7 @@ def main(Nstars, t_end, dt):
 	#rMin = rMin|units.AU
 	#rMax = rMax|units.AU
 	t_end = t_end|units.Myr
-	dt = dt|units.Myr
+	dt = dt|units.yr
 
 	simulation(Nstars, t_end, dt)
 	#nGas, nStars, diskMass, rMin, rMax, Q, diskmassfrac, 
@@ -40,7 +40,7 @@ def new_option_parser():
 	#optparser.add_option('--diskmassfrac', dest='diskmassfrac', type='float', default=1.)
 	
 	optparser.add_option('--t_end', dest='t_end', type='float', default=20.)
-	optparser.add_option('--dt', dest='dt', type='float', default=0.01) #megayears
+	optparser.add_option('--dt', dest='dt', type='float', default=1000.) #megayears
 
 	return optparser
 

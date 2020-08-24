@@ -30,31 +30,33 @@ def EFF(r, a, gamma):
     
 def xyz_coords(Nstars, a, gamma):
     
-    rvals = []
-    
-    #rejection sampling
-    while len(rvals) < Nstars:
-        
-            flag = 0
-    
-            while flag == 0:
-    
-                rval_proposed = 1.5*a*np.random.rand()
-                yval_a, yval_b = EFF(rval_proposed, a, gamma), np.random.rand()
-    
-                if yval_b < yval_a:
-                    
-                    rvals.append(rval_proposed)
-                    flag = 1
-                    
-    phivals = [ 2*np.pi*np.random.random() for i in range(Nstars) ]
-    thetavals = [ np.arccos((2.*np.random.random()-1)) for i in range(Nstars) ]
+	rvals = []
 
-    xvals = [ rvals[i] * np.cos(phivals[i]) * np.sin(thetavals[i]) for i in range(Nstars) ]
-    yvals = [ rvals[i] * np.sin(phivals[i]) * np.sin(thetavals[i]) for i in range(Nstars) ]
-    zvals = [ rvals[i] * np.cos(thetavals[i]) for i in range(Nstars) ]
+	#rejection sampling
+	while len(rvals) < Nstars:
 
-    return xvals, yvals, zvals
+		flag = 0
+
+		while flag == 0:
+
+			rval_proposed = 1.5*a*np.random.rand()
+			yval_a, yval_b = EFF(rval_proposed, a, gamma), np.random.rand()
+
+			if yval_b < yval_a:
+		    
+		    		rvals.append(rval_proposed)
+		    		flag = 1
+                    
+	phivals = [ 2*np.pi*np.random.random() for i in range(Nstars) ]
+	thetavals = [ np.arccos((2.*np.random.random()-1)) for i in range(Nstars) ]
+
+	xvals = [ rvals[i] * np.cos(phivals[i]) * np.sin(thetavals[i]) for i in range(Nstars) ]
+	yvals = [ rvals[i] * np.sin(phivals[i]) * np.sin(thetavals[i]) for i in range(Nstars) ]
+	zvals = [ rvals[i] * np.cos(thetavals[i]) for i in range(Nstars) ]
+
+	print(np.median(xvals), np.median(yvals))
+
+	return xvals, yvals, zvals
     
     
 def uvw_coords(Nstars, sigma_u, sigma_v, sigma_w):
@@ -64,7 +66,6 @@ def uvw_coords(Nstars, sigma_u, sigma_v, sigma_w):
     wvals = np.random.normal(loc=0., scale=sigma_w, size=(Nstars,))
 
     return uvals, vvals, wvals
-
 
 def LCC_maker(Nstars):
     
@@ -78,7 +79,7 @@ def LCC_maker(Nstars):
     us, vs, ws = uvw_coords(Nstars, sigma_u, sigma_v, sigma_w)
     
     #Kroupa distribution, biggest stars are A-type stars
-    masses = new_kroupa_mass_distribution(Nstars, 17.5|units.MSun)
+    masses = new_kroupa_mass_distribution(Nstars, 100.|units.MSun)
     
     #no clumps yet
     #give each star appropriate phase space coordinates, mass
@@ -86,8 +87,8 @@ def LCC_maker(Nstars):
     for i, star in enumerate(stars):
         
         star.x = xs[i] | units.parsec
-        star.y = xs[i] | units.parsec
-        star.z = xs[i] | units.parsec
+        star.y = ys[i] | units.parsec
+        star.z = zs[i] | units.parsec
         
         star.vx = us[i] | units.kms
         star.vy = vs[i] | units.kms

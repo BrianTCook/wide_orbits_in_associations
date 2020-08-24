@@ -36,7 +36,7 @@ def simulation(Nstars, t_end, dt):
 	eps = 1 | units.RSun
 
 	mass_gravity = stars_and_planets.mass.sum()
-	a_init = 10.|units.parsec
+	a_init = 15. | units.parsec #half-mass radius give or take
 	converter_gravity = nbody_system.nbody_to_si(mass_gravity, a_init)
 	
 	gravity = ph4(converter_gravity)
@@ -67,7 +67,7 @@ def simulation(Nstars, t_end, dt):
 
 	for j, t in enumerate(sim_times):
 
-		if j%10 == 0:
+		if j%100 == 0:
 
 			print('simulation time: ', t)
 			print('wall time: %.02f minutes'%((time.time()-t0)/60.))
@@ -87,17 +87,20 @@ def simulation(Nstars, t_end, dt):
 			#plt.scatter(xvals_gas, yvals_gas, s=6, marker='.', c=colors_gauss, cmap=cm, linewidths=0, label='Protoplanetary Disk')
 			#plt.scatter(xvals_stars_and_planets[0], yvals_stars_and_planets[0], s=16, marker='*', c='k', label=r'Star ($M=M_{\odot}$)')
 			#plt.scatter(xvals_stars_and_planets[0:], yvals_stars_and_planets[0:], s=16, marker='.', c='k', label=r'Gas Giants (Solar System)')
-			plt.scatter(xvals_stars_and_planets, yvals_stars_and_planets, s=2, marker='*', c='k')
+			plt.scatter(xvals_stars_and_planets, yvals_stars_and_planets, s=1, marker=',', c='k')
 
-			plt.xlim(-30., 30.)
-			plt.ylim(-30., 30.)
+			plt.xlim(-100., 100.)
+			plt.ylim(-100., 100.)
 			plt.xlabel(r'$x$ (pc)', fontsize=12)
 			plt.ylabel(r'$y$ (pc)', fontsize=12)
 			plt.annotate(r'$t_{\rm sim} = %.02f$ Myr'%(t.value_in(units.Myr)), xy=(0.05, 0.95), xycoords='axes fraction', fontsize=8)
-			plt.annotate(r'$M_{\rm LCC} = %.02f M_{\odot}$'%(stars_and_planets.mass.sum().value_in(units.MSun)), xy=(0.05, 0.9), xycoords='axes fraction', fontsize=8)
-			plt.title('Lower Centaurus Crux model', fontsize=10)
+			plt.annotate(r'$M_{\rm LCC} = %.01f \, M_{\odot}$'%(stars_and_planets.mass.sum().value_in(units.MSun)), xy=(0.05, 0.9), xycoords='axes fraction', fontsize=8)
+			plt.annotate(r'$\Sigma(r, t=0) \propto \left(1 + \left(\frac{r}{a}\right)^{2}\right)^{-\gamma/2}$', xy=(0.6, 0.95), xycoords='axes fraction', fontsize=8)
+			plt.annotate(r'$a = 50.1$ pc', xy=(0.6, 0.9), xycoords='axes fraction', fontsize=8)
+			plt.annotate(r'$\gamma = 15.2$', xy=(0.6, 0.85), xycoords='axes fraction', fontsize=8)
+			plt.title('Lower Centaurus Crux (EFF) model', fontsize=10)
 			plt.tight_layout()
-			plt.savefig('LCC_only_%s.png'%(str(j).rjust(5, '0')))
+			plt.savefig('LCC_only_%s.png'%(str(j).rjust(7, '0')))
 			plt.close()
 
 		#gravhydro.evolve_model(t)
@@ -106,7 +109,7 @@ def simulation(Nstars, t_end, dt):
 		#hydro_to_framework.copy()
 
 	gravity.stop()
-	hydro.stop()
+	#hydro.stop()
 
 	return 1
 
