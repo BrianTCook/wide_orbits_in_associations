@@ -87,7 +87,7 @@ def simulation(Nstars, t_end, dt):
 			#plt.scatter(xvals_gas, yvals_gas, s=6, marker='.', c=colors_gauss, cmap=cm, linewidths=0, label='Protoplanetary Disk')
 			#plt.scatter(xvals_stars_and_planets[0], yvals_stars_and_planets[0], s=16, marker='*', c='k', label=r'Star ($M=M_{\odot}$)')
 			#plt.scatter(xvals_stars_and_planets[0:], yvals_stars_and_planets[0:], s=16, marker='.', c='k', label=r'Gas Giants (Solar System)')
-			#plt.scatter(xvals_stars_and_planets[0], yvals_stars_and_planets[0], s=16, marker='*', c='k', label=r'Star ($M=M_{\odot}$)')
+			plt.scatter(xvals_stars_and_planets, yvals_stars_and_planets, s=2, marker='*', c='k')
 
 			plt.xlim(-30., 30.)
 			plt.ylim(-30., 30.)
