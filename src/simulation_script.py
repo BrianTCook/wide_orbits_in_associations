@@ -14,6 +14,7 @@ import matplotlib.pyplot as plt
 
 from amuse.lab import *
 from amuse.couple import bridge
+from amuse.community.nbody6xx.interface import Nbody6xx
 from initial_conditions import initial_conditions
 from EFF_with_clumps import LCC_maker
 
@@ -65,12 +66,19 @@ def simulation(Nstars, t_end, dt):
 
 	cm = plt.cm.get_cmap('rainbow')
 
+	energy_init = gravity.particles.potential_energy() + gravity.particles.kinetic_energy()
+
 	for j, t in enumerate(sim_times):
 
-		if j%100 == 0:
+		if j%10 == 0:
+
+			energy = gravity.particles.potential_energy() + gravity.particles.kinetic_energy()
+
+			deltaE = energy/energy_init - 1
 
 			print('simulation time: ', t)
 			print('wall time: %.02f minutes'%((time.time()-t0)/60.))
+			print('energy change: %.02e'%(deltaE))
 			print()
 
 			#xvals_gas = gas.x.value_in(units.AU)
@@ -78,6 +86,8 @@ def simulation(Nstars, t_end, dt):
 
 			xvals_stars_and_planets = stars_and_planets.x.value_in(units.parsec)
 			yvals_stars_and_planets = stars_and_planets.y.value_in(units.parsec)
+
+			print('zeroth particle: x = %.02f pc, y = %.02f pc'%(xvals_stars_and_planets[0], yvals_stars_and_planets[0]))
 
 			#xy = np.vstack([xvals_gas, yvals_gas])
 			#colors_gauss = gaussian_kde(xy)(xy)
@@ -87,7 +97,7 @@ def simulation(Nstars, t_end, dt):
 			#plt.scatter(xvals_gas, yvals_gas, s=6, marker='.', c=colors_gauss, cmap=cm, linewidths=0, label='Protoplanetary Disk')
 			#plt.scatter(xvals_stars_and_planets[0], yvals_stars_and_planets[0], s=16, marker='*', c='k', label=r'Star ($M=M_{\odot}$)')
 			#plt.scatter(xvals_stars_and_planets[0:], yvals_stars_and_planets[0:], s=16, marker='.', c='k', label=r'Gas Giants (Solar System)')
-			plt.scatter(xvals_stars_and_planets, yvals_stars_and_planets, s=1, marker=',', c='k')
+			plt.plot(xvals_stars_and_planets, yvals_stars_and_planets, marker=',', c='k', lw=0, linestyle='')
 
 			plt.xlim(-100., 100.)
 			plt.ylim(-100., 100.)
@@ -100,7 +110,7 @@ def simulation(Nstars, t_end, dt):
 			plt.annotate(r'$\gamma = 15.2$', xy=(0.6, 0.85), xycoords='axes fraction', fontsize=8)
 			plt.title('Lower Centaurus Crux (EFF) model', fontsize=10)
 			plt.tight_layout()
-			plt.savefig('LCC_only_%s.png'%(str(j).rjust(7, '0')))
+			plt.savefig('LCC_only_%s.png'%(str(j).rjust(6, '0')))
 			plt.close()
 
 		#gravhydro.evolve_model(t)

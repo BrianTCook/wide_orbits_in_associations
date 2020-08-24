@@ -28,8 +28,8 @@ def EFF(r, a, gamma):
         
         return (1 + (r/a)**2.)**(-gamma/2.)
     
-def xyz_coords(Nstars, a, gamma):
-    
+def xyz_coords(Nstars, Nclumps, a, gamma):
+
 	rvals = []
 
 	#rejection sampling
@@ -53,8 +53,6 @@ def xyz_coords(Nstars, a, gamma):
 	xvals = [ rvals[i] * np.cos(phivals[i]) * np.sin(thetavals[i]) for i in range(Nstars) ]
 	yvals = [ rvals[i] * np.sin(phivals[i]) * np.sin(thetavals[i]) for i in range(Nstars) ]
 	zvals = [ rvals[i] * np.cos(thetavals[i]) for i in range(Nstars) ]
-
-	print(np.median(xvals), np.median(yvals))
 
 	return xvals, yvals, zvals
     
