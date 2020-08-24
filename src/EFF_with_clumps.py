@@ -59,9 +59,9 @@ def xyz_coords(Nstars, a, gamma):
     
 def uvw_coords(Nstars, sigma_u, sigma_v, sigma_w):
     
-    uvals = np.random.normal(loc=0., scale=sigma_U, size=(Nstars,))
-    vvals = np.random.normal(loc=0., scale=sigma_U, size=(Nstars,))
-    wvals = np.random.normal(loc=0., scale=sigma_U, size=(Nstars,))
+    uvals = np.random.normal(loc=0., scale=sigma_u, size=(Nstars,))
+    vvals = np.random.normal(loc=0., scale=sigma_v, size=(Nstars,))
+    wvals = np.random.normal(loc=0., scale=sigma_w, size=(Nstars,))
 
     return uvals, vvals, wvals
 
@@ -72,7 +72,7 @@ def LCC_maker(Nstars):
                     
     #LCC model using EFF formalism and measured velocity dispersions
     a, gamma = 50.1, 15.2
-    sigma_U, sigma_V, sigma_W = 1.89, 0.9, 0.51
+    sigma_u, sigma_v, sigma_w = 1.89, 0.9, 0.51
     
     xs, ys, zs = xyz_coords(Nstars, a, gamma)
     us, vs, ws = uvw_coords(Nstars, sigma_u, sigma_v, sigma_w)
