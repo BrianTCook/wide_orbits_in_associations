@@ -18,7 +18,7 @@ from amuse.community.nbody6xx.interface import Nbody6xx
 from initial_conditions import initial_conditions
 from EFF_with_clumps import LCC_maker
 
-def simulation(Nstars, t_end, dt):
+def simulation(Nstars, Nclumps, t_end, dt):
 
 	'''
 	for now, just makes one star
@@ -32,7 +32,7 @@ def simulation(Nstars, t_end, dt):
 	t0 = time.time()
 
 	#stars_and_planets, gas = initial_conditions(nGas, nStars, diskMass, rMin, rMax, Q, diskmassfrac)
-	stars_and_planets = LCC_maker(Nstars)
+	stars_and_planets = LCC_maker(Nstars, Nclumps)
 
 	eps = 1 | units.RSun
 
