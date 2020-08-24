@@ -28,11 +28,22 @@ def EFF(r, a, gamma):
         
         return (1 + (r/a)**2.)**(-gamma/2.)
     
+def enclosed_number(Nstars, r, a, gamma):
+    
+        #normalizing factor has to be 
+    
+        return Nstars * ( 1 - (1 - (r/a)**2)**(-gamma/2.+1) )
+    
 def xyz_coords(Nstars, Nclumps, a, gamma):
 
-	rvals = []
+    rvals = []
+    
+    clump_populations = [ math.ceil(40.*numpy.random.random()) + 10 for i in range(Nclumps) ]
+    
+    Nbins = 51
+    radial_bins = np.linspace(0., 1.5*a, Nbins+1) #edges of bins in parsecs
+    bin_populations =  [ 0 for i in range(Nbins) ]
 
-	#rejection sampling
 	while len(rvals) < Nstars:
 
 		flag = 0
@@ -41,12 +52,29 @@ def xyz_coords(Nstars, Nclumps, a, gamma):
 
 			rval_proposed = 1.5*a*np.random.rand()
 			yval_a, yval_b = EFF(rval_proposed, a, gamma), np.random.rand()
-
-			if yval_b < yval_a:
+            
+            #rejection sampling
+            if yval_b < yval_a:
 		    
-		    		rvals.append(rval_proposed)
-		    		flag = 1
+                j = 0
+            
+                #finds the appropriate bin
+                if radial_bins[j] > rval_proposed or radial_bins[j+1] < rval_proposed:
                     
+                    j += 1
+                    
+                else:
+                    
+                    bin_middle = 0.5*(radial_bins[j]+radial_bins[j+1])
+                    
+                    if bin_populations[j] < enclosed_number(Nstars, bin_middle, a, gamma):
+                    
+                        rvals.append(rval_proposed)
+                        bin_populations[j] += 1
+    		    		
+                    flag = 1
+                    
+
 	phivals = [ 2*np.pi*np.random.random() for i in range(Nstars) ]
 	thetavals = [ np.arccos((2.*np.random.random()-1)) for i in range(Nstars) ]
 
