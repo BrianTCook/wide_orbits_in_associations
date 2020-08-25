@@ -37,9 +37,10 @@ def enclosed_number(Nstars, r, a, gamma):
     
 def xyz_coords(Nstars, Nclumps, a, gamma):
 
-	rvals = []
+	xvals, yvals, zvals = [], [], []
 
 	clump_populations = [ math.ceil(40.*np.random.random()) + 10 for i in range(Nclumps) ]
+    Nstars_in_clumps = np.sum(clump_populations)
 
 	print('clump populations: ', clump_populations)
 
@@ -47,7 +48,7 @@ def xyz_coords(Nstars, Nclumps, a, gamma):
 	radial_bins = np.linspace(0., 1.5*a, Nbins+1) #edges of bins in parsecs
 	bin_populations =  [ 0 for i in range(Nbins) ]
 
-	while len(rvals) < Nstars:
+	while len(xvals) < (Nstars - Nstars_in_clumps + Nclumps):
 
 		whole_flag = 0
 		clump_flag = 0
@@ -82,9 +83,24 @@ def xyz_coords(Nstars, Nclumps, a, gamma):
 
 					if new_bin_population < enclosed_number(Nstars, bin_middle, a, gamma):
 
-						rvals.append([rval_proposed for k in range(new_members)])
-						phivals.append([2*np.pi*np.random.random() for k in range(new_members)])
-						thetavals.append([np.arccos((2.*np.random.random()-1))for k in range(new_members)])
+						rvals_new = [rval_proposed for k in range(new_members)]
+						phivals_new = [2*np.pi*np.random.random() for k in range(new_members)]
+						thetavals_new = [np.arccos((2.*np.random.random()-1))for k in range(new_members)]
+
+                        	xvals_new = [ rvals[i] * np.cos(phivals[k]) * np.sin(thetavals[k]) for k in range(new_members) ]
+                        	yvals_new = [ rvals[i] * np.sin(phivals[k]) * np.sin(thetavals[k]) for k in range(new_members) ]
+                        	zvals_new = [ rvals[i] * np.cos(thetavals[k]) for k in range(new_members) ]
+
+                        #randomly perturb cluster members
+                        if new_members > 1:
+                            
+                            xvals_new = [ x + eps_x * np.random.rand() for x in xvals_new ]
+                            yvals_new = [ y + eps_y * np.random.rand() for y in yvals_new ]
+                            zvals_new = [ z + eps_z * np.random.rand() for z in zvals_new ]
+                            
+                        xvals.append(xvals_new)
+                        yvals.append(yvals_new)
+                        zvals.append(zvals_new)
 
 						bin_populations[j] += 1
 						clump_flag += 1
@@ -100,19 +116,11 @@ def xyz_coords(Nstars, Nclumps, a, gamma):
 					print('we should not be here')
 					whole_flag = 1 #should not get here
 
-	#unperturbed, clump members are right on top of each other
-	rvals = [j for i in rvals for j in i]
-	thetavals = [j for i in thetavals for j in i]
-	phivals = [j for i in phivals for j in i]
-
-	eps_x = 0.1 # pc
-	eps_y = 0.1 # pc
-	eps_z = 0.1 # pc
-
-	xvals = [ rvals[i] * np.cos(phivals[i]) * np.sin(thetavals[i]) + eps_x * (np.random.rand() - 0.5) for i in range(Nstars) ]
-	yvals = [ rvals[i] * np.sin(phivals[i]) * np.sin(thetavals[i]) + eps_y * (np.random.rand() - 0.5) for i in range(Nstars) ]
-	zvals = [ rvals[i] * np.cos(thetavals[i]) + eps_z * (np.random.rand() - 0.5) for i in range(Nstars) ]
-
+    #concatenate lists
+	xvals = [j for i in xvals for j in i]
+	yvals = [j for i in yvals for j in i]
+	zvals = [j for i in zvals for j in i]
+    
 	return xvals, yvals, zvals
     
     
