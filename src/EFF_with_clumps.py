@@ -35,7 +35,75 @@ def find_nearest_index(value, array):
 def EFF(r, a, gamma):
         
         return (1 + (r/a)**2.)**(-gamma/2.)
-    
+
+def HR_diagram_info(masses):
+
+	lvals = []
+	temps = []
+
+	#a, b are coefficients for the mass-luminosity relation
+	for mass in masses:
+
+		if mass < 0.179 | units.MSun:
+
+			print('danger! danger! danger!')
+			a, b = -100., -100.
+
+		if mass > 0.179|units.MSun and mass <= 0.45|units.MSun :
+
+			a, b = 2.028, -0.976
+
+		if mass > 0.45|units.MSun and mass <= 0.72|units.MSun :
+
+			a, b = 4.572, -0.102
+
+		if mass > 0.72|units.MSun and mass <= 1.05|units.MSun :
+
+			a, b = 5.743, -0.007
+
+		if mass > 1.05|units.MSun and mass <= 2.4|units.MSun :
+
+			a, b = 4.329, 0.01
+
+		if mass > 2.4|units.MSun and mass <= 7.|units.MSun :
+
+			a, b = 3.967, 0.093
+
+		if mass > 7.|units.MSun and mass <= 31.|units.MSun :
+
+			a, b = 2.865, 1.105
+		
+		if mass > 1.5|units.MSun:
+
+			teff = 10**(-0.17*np.log10(mass.value_in(units.MSun))**2. + 0.888*np.log10(mass.value_in(units.MSun)) + 3.671)
+
+		lum = 10**(a * np.log10(mass.value_in(units.MSun)) + b)
+
+		if mass <= 1.5|units.MSun:
+
+			radius = (0.438*(mass.value_in(units.MSun))**2. + 0.479*mass.value_in(units.MSun) + 0.075)|units.RSun
+			
+			lum_units = lum|units.LSun
+
+			sigma = 5.67e-8 * units.J / units.s * (units.m)**(-2.) * (units.K)**(-4.)
+
+			teff = (lum_units / (4*np.pi*radius**2. * sigma))**0.25
+			teff = teff.value_in(units.K)
+
+		lvals.append(lum|units.LSun)
+		temps.append(teff|units.K)
+
+	plt.figure()
+	plt.scatter(temps.value_in(units.K), lvals.value_in(units.LSun), c='k', s=2)
+	plt.gca().invert_xaxis()
+	plt.gca().set_xscale('log')
+	plt.gca().set_yscale('log')
+	plt.xlabel(r'$T_{\rm eff}$ (K)', fontsize=12)
+	plt.ylabel(r'$L \, (L_{\odot})$', fontsize=12)
+	plt.savefig('HRdiagram_LCC.png')
+
+	return lvals, temps
+
 def enclosed_number(Nstars, r, a, gamma):
     
         #normalizing factor has to be 
@@ -52,7 +120,6 @@ def xyz_coords(Nstars, Nclumps, a, gamma):
 	Nbins = 50
 	bin_edges = np.linspace(0., 1.5*a, Nbins+1) #edges of bins in parsecs
 	bin_centers = [ 0.5*(bin_edges[i] + bin_edges[i+1]) for i in range(Nbins) ]
-
 
 	eps_x, eps_y, eps_z = 0.1, 0.1, 0.1 #parsecs, for perturbation purposes
 
@@ -130,31 +197,34 @@ def uvw_coords(Nstars, sigma_u, sigma_v, sigma_w):
 
 def LCC_maker(Nstars, Nclumps):
     
-    stars = Particles(Nstars)
-                    
-    #LCC model using EFF formalism and measured velocity dispersions
-    a, gamma = 50.1, 15.2
-    sigma_u, sigma_v, sigma_w = 1.89, 0.9, 0.51
-    
-    xs, ys, zs = xyz_coords(Nstars, Nclumps, a, gamma)
-    us, vs, ws = uvw_coords(Nstars, sigma_u, sigma_v, sigma_w)
-    
-    #Kroupa distribution, biggest stars are A-type stars
-    masses = new_kroupa_mass_distribution(Nstars, 100.|units.MSun)
-    
-    #no clumps yet
-    #give each star appropriate phase space coordinates, mass
-    
-    for i, star in enumerate(stars):
-        
-        star.x = xs[i] | units.parsec
-        star.y = ys[i] | units.parsec
-        star.z = zs[i] | units.parsec
-        
-        star.vx = us[i] | units.kms
-        star.vy = vs[i] | units.kms
-        star.vz = ws[i] | units.kms
-        
-        star.mass = masses[i]
+	stars = Particles(Nstars)
+		    
+	#LCC model using EFF formalism and measured velocity dispersions
+	a, gamma = 50.1, 15.2
+	sigma_u, sigma_v, sigma_w = 1.89, 0.9, 0.51
 
-    return stars
+	xs, ys, zs = xyz_coords(Nstars, Nclumps, a, gamma)
+	us, vs, ws = uvw_coords(Nstars, sigma_u, sigma_v, sigma_w)
+
+	#Kroupa distribution, biggest stars are A-type stars
+	masses = new_kroupa_mass_distribution(Nstars, 31.|units.MSun)
+	temps, lums = HR_diagram_info(masses)
+
+	#no clumps yet
+	#give each star appropriate phase space coordinates, mass
+
+	for i, star in enumerate(stars):
+
+		star.x = xs[i] | units.parsec
+		star.y = ys[i] | units.parsec
+		star.z = zs[i] | units.parsec
+
+		star.vx = us[i] | units.kms
+		star.vy = vs[i] | units.kms
+		star.vz = ws[i] | units.kms
+
+		star.mass = masses[i]
+		star.luminosity = lums[i]
+		star.temperature = temps[i]
+
+	return stars
