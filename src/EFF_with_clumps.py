@@ -101,9 +101,13 @@ def xyz_coords(Nstars, Nclumps, a, gamma):
 	thetavals = [j for i in thetavals for j in i]
 	phivals = [j for i in phivals for j in i]
 
-	xvals = [ rvals[i] * np.cos(phivals[i]) * np.sin(thetavals[i]) for i in range(Nstars) ]
-	yvals = [ rvals[i] * np.sin(phivals[i]) * np.sin(thetavals[i]) for i in range(Nstars) ]
-	zvals = [ rvals[i] * np.cos(thetavals[i]) for i in range(Nstars) ]
+    eps_x = 0.1 # pc
+    eps_y = 0.1 # pc
+    eps_z = 0.1 # pc
+
+	xvals = [ rvals[i] * np.cos(phivals[i]) * np.sin(thetavals[i]) + eps_x * (np.random.rand() - 0.5) for i in range(Nstars) ]
+	yvals = [ rvals[i] * np.sin(phivals[i]) * np.sin(thetavals[i]) + eps_y * (np.random.rand() - 0.5) for i in range(Nstars) ]
+	zvals = [ rvals[i] * np.cos(thetavals[i]) + eps_z * (np.random.rand() - 0.5) for i in range(Nstars) ]
 
 	return xvals, yvals, zvals
     
