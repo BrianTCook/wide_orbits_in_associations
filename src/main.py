@@ -10,6 +10,8 @@ import matplotlib.pyplot as plt
 from amuse.lab import *
 from amuse.couple import bridge
 from amuse.units.optparse import OptionParser
+from interface import Nbody6xx
+from amuse.units import nbody_system
 
 from simulation_script import simulation
 
@@ -47,8 +49,27 @@ def new_option_parser():
 
 if __name__ in '__main__':
 
+    '''
 	np.random.seed(42)
-
-
 	o, arguments = new_option_parser().parse_args()
 	main(**o.__dict__)
+    '''
+
+    inst = Nbody6xx(redirection="none")
+
+    inst.initialize_code()
+    inst.particles.mass = 1 | nbody_system.mass
+
+    inst.evolve_model(2|nbody_system.time)
+
+    inst.get_velocity(1)
+    inst.get_position(1)
+    inst.get_number_of_particles()
+    inst.get_total_mass()
+    inst.get_total_radius()
+
+    print inst.particles
+    inst.particles.add_particles(new_plummer_model(10))
+    p=new_plummer_model(10)
+    inst.new_particle(p[0].mass,p[0].x,p[0].y,p[0].z,p[0].vx,p[0].vy,p[0].vz,p[0].radius)
+
