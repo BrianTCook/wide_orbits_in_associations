@@ -53,9 +53,11 @@ def xyz_coords(Nstars, Nclumps, a, gamma):
 		whole_flag = 0
 		clump_flag = 0
 
-		print('number of assignments: %i'%(len(rvals)))
+		print('number of assignments: %i'%(len(xvals)))
 
 		while whole_flag == 0:
+            
+            print('clump_flag: %i'%(clump_flag))
 
 			rval_proposed = 1.5*a*np.random.rand()
 			yval_a, yval_b = EFF(rval_proposed, a, gamma), np.random.rand()
