@@ -43,7 +43,7 @@ def xyz_coords(Nstars, Nclumps, a, gamma):
 
 	print('clump populations: ', clump_populations)
 
-	Nbins = 26
+	Nbins = 25
 	radial_bins = np.linspace(0., 1.5*a, Nbins+1) #edges of bins in parsecs
 	bin_populations =  [ 0 for i in range(Nbins) ]
 
@@ -51,6 +51,8 @@ def xyz_coords(Nstars, Nclumps, a, gamma):
 
 		whole_flag = 0
 		clump_flag = 0
+
+		print('number of assignments: %i'%(len(rvals)))
 
 		while whole_flag == 0:
 
@@ -63,11 +65,7 @@ def xyz_coords(Nstars, Nclumps, a, gamma):
 				j = 0
 
 				#finds the appropriate bin
-				if radial_bins[j] > rval_proposed or radial_bins[j+1] <= rval_proposed:
-
-					j += 1
-
-				else:
+				if radial_bins[j] < rval_proposed and radial_bins[j+1] >= rval_proposed:
 
 					bin_middle = 0.5*(radial_bins[j]+radial_bins[j+1])
 
@@ -93,17 +91,23 @@ def xyz_coords(Nstars, Nclumps, a, gamma):
 
 						whole_flag = 1
 
-				print('we should not be here')
-				whole_flag = 1 #should not get here
+				else:
+
+					j += 1
+
+				if j >= Nbins-1:
+
+					print('we should not be here')
+					whole_flag = 1 #should not get here
 
 	#unperturbed, clump members are right on top of each other
 	rvals = [j for i in rvals for j in i]
 	thetavals = [j for i in thetavals for j in i]
 	phivals = [j for i in phivals for j in i]
 
-    eps_x = 0.1 # pc
-    eps_y = 0.1 # pc
-    eps_z = 0.1 # pc
+	eps_x = 0.1 # pc
+	eps_y = 0.1 # pc
+	eps_z = 0.1 # pc
 
 	xvals = [ rvals[i] * np.cos(phivals[i]) * np.sin(thetavals[i]) + eps_x * (np.random.rand() - 0.5) for i in range(Nstars) ]
 	yvals = [ rvals[i] * np.sin(phivals[i]) * np.sin(thetavals[i]) + eps_y * (np.random.rand() - 0.5) for i in range(Nstars) ]
