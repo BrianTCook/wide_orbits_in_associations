@@ -40,8 +40,10 @@ def simulation(Nstars, Nclumps, t_end, dt):
 	a_init = 15. | units.parsec #half-mass radius give or take
 	converter_gravity = nbody_system.nbody_to_si(mass_gravity, a_init)
 	
-	gravity = Nbody6xx(converter_gravity)
+	gravity = Nbody6xx(converter_gravity, redirection='none')
+	gravity.initialize_code()
 	gravity.particles.add_particles(stars_and_planets)
+	gravity.commit_particles()
 
 	#internal_bodies = gas
 	#mass_gas = gas.mass.sum()
