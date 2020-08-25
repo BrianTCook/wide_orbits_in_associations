@@ -41,7 +41,7 @@ def new_option_parser():
 	#optparser.add_option('--diskmassfrac', dest='diskmassfrac', type='float', default=1.)
 
 	optparser.add_option('--t_end', dest='t_end', type='float', default=20.)
-	optparser.add_option('--dt', dest='dt', type='float', default=0.01) #megayears
+	optparser.add_option('--dt', dest='dt', type='float', default=0.001) #megayears
 
 	return optparser
 

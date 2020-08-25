@@ -25,6 +25,13 @@ from amuse.lab import *
 from amuse.couple import bridge
 from initial_conditions import initial_conditions
 
+def find_nearest_index(value, array):
+
+	array = np.asarray(array)
+	idx = (np.abs(array - value)).argmin()
+
+	return idx
+
 def EFF(r, a, gamma):
         
         return (1 + (r/a)**2.)**(-gamma/2.)
@@ -39,15 +46,17 @@ def xyz_coords(Nstars, Nclumps, a, gamma):
 
 	xvals, yvals, zvals = [], [], []
 
-	clump_populations = [ math.ceil(5.*np.random.random()) for i in range(Nclumps) ]
+	clump_populations = [ math.ceil(40.*np.random.random() + 10.) for i in range(Nclumps) ]
 	Nstars_in_clumps = np.sum(clump_populations)
 
-	Nbins = 10
-	radial_bins = np.linspace(0., 1.5*a, Nbins+1) #edges of bins in parsecs
+	Nbins = 50
+	bin_edges = np.linspace(0., 1.5*a, Nbins+1) #edges of bins in parsecs
+	bin_centers = [ 0.5*(bin_edges[i] + bin_edges[i+1]) for i in range(Nbins) ]
+
 
 	eps_x, eps_y, eps_z = 0.1, 0.1, 0.1 #parsecs, for perturbation purposes
 
-	cdf = [ math.ceil(enclosed_number(Nstars, 0.5*(radial_bins[i] + radial_bins[i+1]), a, gamma)) for i in range(Nbins) ]
+	cdf = [ math.ceil(enclosed_number(Nstars, bin_centers[i], a, gamma)) for i in range(Nbins) ]
 
 	allowances = [ 0 for i in range(Nbins) ]
 
@@ -65,60 +74,45 @@ def xyz_coords(Nstars, Nclumps, a, gamma):
 
 		rval_proposed = 1.5 * a * np.random.rand() #pc
 
-		j = 0
+		idx_bin = find_nearest_index(rval_proposed, bin_centers)	
 
-		#finds the appropriate bin
-		if radial_bins[j] < rval_proposed and radial_bins[j+1] >= rval_proposed:
+		#fills bin with a clump or just a single star
+		if clump_flag < Nclumps:
 
-			bin_middle = 0.5*(radial_bins[j]+radial_bins[j+1])
+			new_members = clump_populations[clump_flag]
 
-			#fills bin with a clump or just a single star
-			if clump_flag < Nclumps:
-
-				new_members = clump_populations[clump_flag]
-
-			else:
-
-				new_members = 1
-
-			new_bin_population = bin_populations[j] + new_members
-
-			if new_bin_population < allowances[j]:
-
-				if clump_flag < Nclumps:
-					clump_flag += 1
-
-				rvals_new = [rval_proposed for k in range(new_members)]
-				phivals_new = [2*np.pi*np.random.random() for k in range(new_members)]
-				thetavals_new = [np.arccos((2.*np.random.random()-1))for k in range(new_members)]
-
-				xvals_new = [ rvals_new[k] * np.cos(phivals_new[k]) * np.sin(thetavals_new[k]) for k in range(new_members) ]
-				yvals_new = [ rvals_new[k] * np.sin(phivals_new[k]) * np.sin(thetavals_new[k]) for k in range(new_members) ]
-				zvals_new = [ rvals_new[k] * np.cos(thetavals_new[k]) for k in range(new_members) ]
-
-				#randomly perturb cluster members
-				if new_members > 1:
-				    
-					xvals_new = [ x + eps_x * np.random.rand() for x in xvals_new ]
-					yvals_new = [ y + eps_y * np.random.rand() for y in yvals_new ]
-					zvals_new = [ z + eps_z * np.random.rand() for z in zvals_new ]
-
-				xvals.append(xvals_new)
-				yvals.append(yvals_new)
-				zvals.append(zvals_new)
-
-				print(xvals)
-
-				bin_populations[j] = new_bin_population
 		else:
 
-			j += 1
+			new_members = 1
 
-		if j >= Nbins-1:
+		new_bin_population = bin_populations[idx_bin] + new_members
 
-			print('we should not be here')
-			return
-    
+		if new_bin_population < 1.05 * allowances[idx_bin]:
+
+			if clump_flag < Nclumps:
+				clump_flag += 1
+
+			rvals_new = [rval_proposed for k in range(new_members)]
+			phivals_new = [2*np.pi*np.random.random() for k in range(new_members)]
+			thetavals_new = [np.arccos((2.*np.random.random()-1))for k in range(new_members)]
+
+			xvals_new = [ rvals_new[k] * np.cos(phivals_new[k]) * np.sin(thetavals_new[k]) for k in range(new_members) ]
+			yvals_new = [ rvals_new[k] * np.sin(phivals_new[k]) * np.sin(thetavals_new[k]) for k in range(new_members) ]
+			zvals_new = [ rvals_new[k] * np.cos(thetavals_new[k]) for k in range(new_members) ]
+
+			#randomly perturb cluster members
+			if new_members > 1:
+			    
+				xvals_new = [ x + eps_x * np.random.rand() for x in xvals_new ]
+				yvals_new = [ y + eps_y * np.random.rand() for y in yvals_new ]
+				zvals_new = [ z + eps_z * np.random.rand() for z in zvals_new ]
+
+			xvals.append(xvals_new)
+			yvals.append(yvals_new)
+			zvals.append(zvals_new)
+
+			bin_populations[idx_bin] = new_bin_population
+
 	xvals = [ j for i in xvals for j in i ]
 	yvals = [ j for i in yvals for j in i ]
 	zvals = [ j for i in zvals for j in i ]
