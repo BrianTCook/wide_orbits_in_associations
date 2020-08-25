@@ -109,7 +109,7 @@ def xyz_coords(Nstars, Nclumps, a, gamma):
 
 				print(xvals)
 
-				bin_populations[j] += new_members
+				bin_populations[j] = new_bin_population
 		else:
 
 			j += 1
