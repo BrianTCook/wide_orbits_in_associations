@@ -45,12 +45,7 @@ def HR_diagram_info(masses):
 	#a, b are coefficients for the mass-luminosity relation
 	for mass in masses:
 
-		if mass < 0.179 | units.MSun:
-
-			print('danger! danger! danger!')
-			a, b = -100., -100.
-
-		if mass > 0.179|units.MSun and mass <= 0.45|units.MSun :
+		if mass <= 0.45|units.MSun :
 
 			a, b = 2.028, -0.976
 
@@ -200,8 +195,11 @@ def LCC_maker(Nstars, Nclumps):
 	us, vs, ws = uvw_coords(Nstars, sigma_u, sigma_v, sigma_w)
 
 	#Kroupa distribution, biggest stars are A-type stars
-	masses = new_salpeter_mass_distribution(Nstars, 0.179|units.MSun, 31.|units.MSun)
+	masses = new_kroupa_mass_distribution(Nstars, 31.|units.MSun)
 	temps, lums = HR_diagram_info(masses)
+
+	np.savetxt('star_temperatures.txt', temps)
+	np.savetxt('star_luminosities.txt', lums)
 
 	#no clumps yet
 	#give each star appropriate phase space coordinates, mass
