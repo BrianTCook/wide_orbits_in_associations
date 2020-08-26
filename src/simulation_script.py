@@ -112,10 +112,8 @@ def simulation(Nstars, Nclumps, t_end, dt):
 			#plt.scatter(xvals_stars_and_planets[0:], yvals_stars_and_planets[0:], s=16, marker='.', c='k', label=r'Gas Giants (Solar System)')
 			plt.plot(xvals_stars_and_planets, yvals_stars_and_planets, marker=',', c='k', lw=0, linestyle='')
 
-			plt.xlim(-100., 100.)
-			plt.ylim(-100., 100.)
-			plt.xlabel(r'$x$ (pc)', fontsize=12)
-			plt.ylabel(r'$y$ (pc)', fontsize=12)
+			plt.xlabel(r'$X_{\rm LCC}$ (pc)', fontsize=12)
+			plt.ylabel(r'$Y_{\rm LCC}$ (pc)', fontsize=12)
 			plt.annotate(r'$t_{\rm sim} = %.02f$ Myr'%(t.value_in(units.Myr)), xy=(0.05, 0.95), xycoords='axes fraction', fontsize=8)
 			plt.annotate(r'$M_{\rm LCC} = %.01f \, M_{\odot}$'%(stars_and_planets.mass.sum().value_in(units.MSun)), xy=(0.05, 0.9), xycoords='axes fraction', fontsize=8)
 			plt.annotate(r'$\Sigma(r, t=0) \propto \left(1 + \left(\frac{r}{a}\right)^{2}\right)^{-\gamma/2}$', xy=(0.6, 0.95), xycoords='axes fraction', fontsize=8)
