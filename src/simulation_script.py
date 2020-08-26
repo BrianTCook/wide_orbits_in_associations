@@ -12,6 +12,11 @@ import matplotlib
 matplotlib.use('agg')
 import matplotlib.pyplot as plt
 
+from galpy.df import quasiisothermaldf
+from galpy.potential import MWPotential2014, to_amuse
+from galpy.util import bovy_conversion
+from galpy.actionAngle import actionAngleStaeckel
+
 from amuse.lab import *
 from amuse.couple import bridge
 from amuse.community.nbody6xx.interface import Nbody6xx
@@ -40,10 +45,16 @@ def simulation(Nstars, Nclumps, t_end, dt):
 	a_init = 15. | units.parsec #half-mass radius give or take
 	converter_gravity = nbody_system.nbody_to_si(mass_gravity, a_init)
 	
-	gravity = ph4(converter_gravity)#, redirection='none')
-	gravity.initialize_code()
-	gravity.particles.add_particles(stars_and_planets)
-	gravity.commit_particles()
+	association_code = ph4(converter_gravity)#, redirection='none')
+	association_code.initialize_code()
+	association_code.particles.add_particles(stars_and_planets)
+	association_code.commit_particles()
+    
+    galaxy_code = to_amuse(MWPotential2014, t=0.0, tgalpy=0.0, reverse=False, ro=None, vo=None)
+    
+    gravity = bridge.Bridge(use_threading=False)
+
+    gravity.add_system(association_code, (galaxy_code))
 
 	#internal_bodies = gas
 	#mass_gas = gas.mass.sum()

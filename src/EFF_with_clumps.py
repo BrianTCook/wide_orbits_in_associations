@@ -204,14 +204,19 @@ def LCC_maker(Nstars, Nclumps):
 
 	#give each star appropriate phase space coordinates, mass
 
+    X0, Y0, Z0 = 57.7|units.parsec, -98.3|units.parsec, 16.6|units.parsec#coordinates of LCC in Sun frame
+    U0, V0, W0 = -8.96|units.kms, -20.55|units.kms, -6.29|units.kms
+    XMW, YMW, ZMW = -8178.|units.parsec, 0.|units.parsec, 0|units.parsec
+    UMW, VMW, WMW = 10.|units.kms, 247.4|units.kms, 0.|units.kms 
+
 	for i, star in enumerate(stars):
 
-		star.x = xs[i] | units.parsec
-		star.y = ys[i] | units.parsec
-		star.z = zs[i] | units.parsec
+		star.x = xs[i] | units.parsec + X0 + XMW
+		star.y = ys[i] | units.parsec + Y0 + YMW
+		star.z = zs[i] | units.parsec + Z0 + ZMW
 
-		star.vx = us[i] | units.kms
-		star.vy = vs[i] | units.kms
+		star.vx = us[i] | units.kms + U0 + UMW
+		star.vy = vs[i] | units.kms + 
 		star.vz = ws[i] | units.kms
 
 		star.mass = masses[i]
