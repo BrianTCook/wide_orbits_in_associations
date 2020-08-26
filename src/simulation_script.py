@@ -45,7 +45,7 @@ def simulation(Nstars, Nclumps, t_end, dt):
 	a_init = 15. | units.parsec #half-mass radius give or take
 	converter_gravity = nbody_system.nbody_to_si(mass_gravity, a_init)
 	
-	association_code = ph4(converter_gravity)#, redirection='none')
+	association_code = ph4(converter_gravity)
 	association_code.particles.add_particles(stars_and_planets)
 	association_code.commit_particles()
 
@@ -53,7 +53,7 @@ def simulation(Nstars, Nclumps, t_end, dt):
 
 	gravity = bridge.Bridge(use_threading=False)
 
-	gravity.add_system(association_code, (galaxy_code))
+	gravity.add_system(association_code, (galaxy_code,))
 	print(gravity)
 
 	#internal_bodies = gas
@@ -83,7 +83,7 @@ def simulation(Nstars, Nclumps, t_end, dt):
 
 	for j, t in enumerate(sim_times):
 
-		if j%10 == 0:
+		if j%200 == 0:
 
 			energy = gravity.particles.potential_energy() + gravity.particles.kinetic_energy()
 
@@ -100,6 +100,9 @@ def simulation(Nstars, Nclumps, t_end, dt):
 			xvals_stars_and_planets = stars_and_planets.x.value_in(units.parsec)
 			yvals_stars_and_planets = stars_and_planets.y.value_in(units.parsec)
 
+			x_med = np.median(xvals_stars_and_planets)
+			y_med = np.median(yvals_stars_and_planets)
+
 			print('zeroth particle: x = %.02f pc, y = %.02f pc'%(xvals_stars_and_planets[0], yvals_stars_and_planets[0]))
 
 			#xy = np.vstack([xvals_gas, yvals_gas])
@@ -110,10 +113,14 @@ def simulation(Nstars, Nclumps, t_end, dt):
 			#plt.scatter(xvals_gas, yvals_gas, s=6, marker='.', c=colors_gauss, cmap=cm, linewidths=0, label='Protoplanetary Disk')
 			#plt.scatter(xvals_stars_and_planets[0], yvals_stars_and_planets[0], s=16, marker='*', c='k', label=r'Star ($M=M_{\odot}$)')
 			#plt.scatter(xvals_stars_and_planets[0:], yvals_stars_and_planets[0:], s=16, marker='.', c='k', label=r'Gas Giants (Solar System)')
-			plt.plot(xvals_stars_and_planets, yvals_stars_and_planets, marker=',', c='k', lw=0, linestyle='')
 
-			plt.xlabel(r'$X_{\rm LCC}$ (pc)', fontsize=12)
-			plt.ylabel(r'$Y_{\rm LCC}$ (pc)', fontsize=12)
+			plt.plot([ x-x_med for x in xvals_stars_and_planets ], [ y-y_med for y in yvals_stars_and_planets ], marker='*', markersize=1, c='k', lw=0, linestyle='')
+
+			plt.xlim(-100., 100.)
+			plt.ylim(-100., 100.)
+
+			plt.xlabel(r'$(x-\tilde{x})_{\rm LCC}$ (pc)', fontsize=12)
+			plt.ylabel(r'$(y-\tilde{y})_{\rm LCC}$ (pc)', fontsize=12)
 			plt.annotate(r'$t_{\rm sim} = %.02f$ Myr'%(t.value_in(units.Myr)), xy=(0.05, 0.95), xycoords='axes fraction', fontsize=8)
 			plt.annotate(r'$M_{\rm LCC} = %.01f \, M_{\odot}$'%(stars_and_planets.mass.sum().value_in(units.MSun)), xy=(0.05, 0.9), xycoords='axes fraction', fontsize=8)
 			plt.annotate(r'$\Sigma(r, t=0) \propto \left(1 + \left(\frac{r}{a}\right)^{2}\right)^{-\gamma/2}$', xy=(0.6, 0.95), xycoords='axes fraction', fontsize=8)
