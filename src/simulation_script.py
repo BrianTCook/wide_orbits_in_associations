@@ -46,15 +46,15 @@ def simulation(Nstars, Nclumps, t_end, dt):
 	converter_gravity = nbody_system.nbody_to_si(mass_gravity, a_init)
 	
 	association_code = ph4(converter_gravity)#, redirection='none')
-	association_code.initialize_code()
 	association_code.particles.add_particles(stars_and_planets)
 	association_code.commit_particles()
-    
-    galaxy_code = to_amuse(MWPotential2014, t=0.0, tgalpy=0.0, reverse=False, ro=None, vo=None)
-    
-    gravity = bridge.Bridge(use_threading=False)
 
-    gravity.add_system(association_code, (galaxy_code))
+	galaxy_code = to_amuse(MWPotential2014, t=0.0, tgalpy=0.0, reverse=False, ro=None, vo=None)
+
+	gravity = bridge.Bridge(use_threading=False)
+
+	gravity.add_system(association_code, (galaxy_code))
+	print(gravity)
 
 	#internal_bodies = gas
 	#mass_gas = gas.mass.sum()
@@ -63,7 +63,7 @@ def simulation(Nstars, Nclumps, t_end, dt):
 	#hydro = Fi(converter_hydro, mode='openmp')
 	#hydro.gas_particles.add_particles(gas)
 
-	gravity.parameters.epsilon_squared = eps**2
+	#gravity.parameters.epsilon_squared = eps**2
 	#hydro.parameters.epsilon_squared = eps**2
 
 	gravity_to_framework = gravity.particles.new_channel_to(stars_and_planets)
