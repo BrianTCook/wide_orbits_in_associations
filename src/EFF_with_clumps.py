@@ -73,7 +73,8 @@ def HR_diagram_info(masses):
 
 			teff = 10**(-0.17*np.log10(mass.value_in(units.MSun))**2. + 0.888*np.log10(mass.value_in(units.MSun)) + 3.671)
 
-		lum = 10**(a * np.log10(mass.value_in(units.MSun)) + b)
+		lum = 10**(a * np.log10(mass.value_in(units.MSun)) + b) #LSun
+        print('lum is: ', lum)
 
 		if mass <= 1.5|units.MSun:
 
@@ -84,7 +85,6 @@ def HR_diagram_info(masses):
 			sigma = 5.67e-8 | units.J * (units.s)**(-1.) * (units.m)**(-2.) * (units.K)**(-4.)
 
 			teff = (lum_units / (4*np.pi*radius**2. * sigma))**(1/4.)
-
 			teff = (teff.value_in(units.K))
 
 		lvals.append(lum) #LSun
