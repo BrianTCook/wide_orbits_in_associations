@@ -69,12 +69,11 @@ def HR_diagram_info(masses):
 
 			a, b = 2.865, 1.105
 		
+		lum = 10**(a * np.log10(mass.value_in(units.MSun)) + b) #LSun
+
 		if mass > 1.5|units.MSun:
 
 			teff = 10**(-0.17*np.log10(mass.value_in(units.MSun))**2. + 0.888*np.log10(mass.value_in(units.MSun)) + 3.671)
-
-		lum = 10**(a * np.log10(mass.value_in(units.MSun)) + b) #LSun
-        print('lum is: ', lum)
 
 		if mass <= 1.5|units.MSun:
 
@@ -196,12 +195,13 @@ def LCC_maker(Nstars, Nclumps):
 
 	#Kroupa distribution, biggest stars are A-type stars
 	masses = new_kroupa_mass_distribution(Nstars, 31.|units.MSun)
+
 	temps, lums = HR_diagram_info(masses)
 
+	np.savetxt('star_masses.txt', masses.value_in(units.MSun))
 	np.savetxt('star_temperatures.txt', temps)
 	np.savetxt('star_luminosities.txt', lums)
 
-	#no clumps yet
 	#give each star appropriate phase space coordinates, mass
 
 	for i, star in enumerate(stars):
