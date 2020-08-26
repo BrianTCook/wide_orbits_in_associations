@@ -23,6 +23,7 @@ import matplotlib.pyplot as plt
 
 from amuse.lab import *
 from amuse.couple import bridge
+from amuse.ic.salpeter import new_salpeter_mass_distribution
 from initial_conditions import initial_conditions
 
 def find_nearest_index(value, array):
@@ -85,22 +86,14 @@ def HR_diagram_info(masses):
 			
 			lum_units = lum|units.LSun
 
-			sigma = 5.67e-8 * units.J / units.s * (units.m)**(-2.) * (units.K)**(-4.)
+			sigma = 5.67e-8 | units.J * (units.s)**(-1.) * (units.m)**(-2.) * (units.K)**(-4.)
 
-			teff = (lum_units / (4*np.pi*radius**2. * sigma))**0.25
-			teff = teff.value_in(units.K)
+			teff = (lum_units / (4*np.pi*radius**2. * sigma))**(1/4.)
 
-		lvals.append(lum|units.LSun)
-		temps.append(teff|units.K)
+			teff = (teff.value_in(units.K))
 
-	plt.figure()
-	plt.scatter(temps.value_in(units.K), lvals.value_in(units.LSun), c='k', s=2)
-	plt.gca().invert_xaxis()
-	plt.gca().set_xscale('log')
-	plt.gca().set_yscale('log')
-	plt.xlabel(r'$T_{\rm eff}$ (K)', fontsize=12)
-	plt.ylabel(r'$L \, (L_{\odot})$', fontsize=12)
-	plt.savefig('HRdiagram_LCC.png')
+		lvals.append(lum) #LSun
+		temps.append(teff) #Kelvin
 
 	return lvals, temps
 
@@ -207,7 +200,7 @@ def LCC_maker(Nstars, Nclumps):
 	us, vs, ws = uvw_coords(Nstars, sigma_u, sigma_v, sigma_w)
 
 	#Kroupa distribution, biggest stars are A-type stars
-	masses = new_kroupa_mass_distribution(Nstars, 31.|units.MSun)
+	masses = new_salpeter_mass_distribution(Nstars, 0.179|units.MSun, 31.|units.MSun)
 	temps, lums = HR_diagram_info(masses)
 
 	#no clumps yet
