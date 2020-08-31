@@ -7,19 +7,23 @@ import os
 
 import numpy as np
 from scipy.stats import gaussian_kde
+import math
+import pandas as pd
 
 import matplotlib
 matplotlib.use('agg')
 import matplotlib.pyplot as plt
 
-from galpy.df import quasiisothermaldf
+#from galpy.df import quasiisothermaldf
 from galpy.potential import MWPotential2014, to_amuse
-from galpy.util import bovy_conversion
-from galpy.actionAngle import actionAngleStaeckel
+#from galpy.util import bovy_conversion
+#from galpy.actionAngle import actionAngleStaeckel
 
 from amuse.lab import *
 from amuse.couple import bridge
 from amuse.community.nbody6xx.interface import Nbody6xx
+from amuse.support import io
+
 from initial_conditions import initial_conditions
 from EFF_with_clumps import LCC_maker
 
@@ -29,7 +33,7 @@ def print_diagnostics(time, simulation_bodies, E_dyn, dE_dyn):
     print('time: ', time)
     print('simulation_bodies.center_of_mass() in parsecs: ', simulation_bodies.center_of_mass().value_in(units.parsec))
     print('E_dyn: ', E_dyn)
-    print('dE_dyn: ', dE_dyn)
+    print('dE_dyn: %.04e'%(dE_dyn))
     print('------------')
 
 def simulation(Nstars, Nclumps, t_end, dt):
@@ -90,21 +94,22 @@ def simulation(Nstars, Nclumps, t_end, dt):
 
 	energy_init = gravity.particles.potential_energy() + gravity.particles.kinetic_energy()
 
-    #for 3D numpy array storage
-    Nsavetimes = 100
-    all_data = np.zeros((Nsavetimes+1, Ntotal, 6))
-    mass_data = np.zeros((Nsavetimes+1, Ntotal))    
-    #COM_data = np.zeros((len(sim_times), Norbiters, 2))
+	#for 3D numpy array storage
+	Nsavetimes = 100
+	Ntotal = len(gravity.particles)
+	all_data = np.zeros((Nsavetimes+1, Ntotal, 6))
+	mass_data = np.zeros((Nsavetimes+1, Ntotal))    
+	#COM_data = np.zeros((len(sim_times), Norbiters, 2))
 
-    #for saving in write_set_to_file
-    filename = 'data_temp.csv'
-    attributes = ('mass', 'x', 'y', 'z', 'vx', 'vy', 'vz')
-    
-    print('len(sim_times) is', len(sim_times))
-    saving_flag = int(math.floor(len(sim_times)/Nsavetimes))
-    
-    t0 = time.time()
-    j_like_index = 0
+	#for saving in write_set_to_file
+	filename = 'data_temp.csv'
+	attributes = ('mass', 'x', 'y', 'z', 'vx', 'vy', 'vz')
+
+	print('len(sim_times) is', len(sim_times))
+	saving_flag = int(math.floor(len(sim_times)/Nsavetimes))
+
+	t0 = time.time()
+	j_like_index = 0
 
 	for j, t in enumerate(sim_times):
 
@@ -115,21 +120,18 @@ def simulation(Nstars, Nclumps, t_end, dt):
 
 			print_diagnostics(t, stars_and_planets, energy, deltaE)
             
-            io.write_set_to_file(gravity.particles, filename, 'csv',
-                                 attribute_types = (units.MSun, units.parsec, units.parsec, units.parsec, units.kms, units.kms, units.kms),
-                                 attribute_names = attributes)
-            
-            data_t = pd.read_csv(filename, names=list(attributes))
-            data_t = data_t.drop([0, 1, 2]) #removes labels units, and unit names
-            
-            masses = data_t['mass'].tolist()
-            mass_data[j_like_index, :len(data_t.index)] = masses #in solar masses
+			io.write_set_to_file(gravity.particles, filename, 'csv',
+					 attribute_types = (units.MSun, units.parsec, units.parsec, units.parsec, units.kms, units.kms, units.kms),
+					 attribute_names = attributes)
 
-            data_t = data_t.drop(columns=['mass']) #goes from 7D --> 6D
-            data_t = data_t.astype(float) #strings to floats
-    
-            all_data[j_like_index, :len(data_t.index), :] = data_t.values
-            np.savetxt('phasespace_frame_%s_LCC.ascii'%(str(j).rjust(5, '0')), data_t.values)
+			data_t = pd.read_csv(filename, names=list(attributes))
+			data_t = data_t.drop([0, 1, 2]) #removes labels units, and unit names
+
+			data_t = data_t.drop(columns=['mass']) #goes from 7D --> 6D
+			data_t = data_t.astype(float) #strings to floats
+
+			all_data[j_like_index, :len(data_t.index), :] = data_t.values
+			np.savetxt('phasespace_frame_%s_LCC.ascii'%(str(j).rjust(5, '0')), data_t.values)
 
 		#gravhydro.evolve_model(t)
 		gravity.evolve_model(t)
