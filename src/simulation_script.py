@@ -27,7 +27,7 @@ def print_diagnostics(time, simulation_bodies, E_dyn, dE_dyn):
     
     print('------------')
     print('time: ', time)
-    print('simulation_bodies.center_of_mass(): ', simulation_bodies.center_of_mass().value_in(units.kpc))
+    print('simulation_bodies.center_of_mass() in parsecs: ', simulation_bodies.center_of_mass().value_in(units.parsec))
     print('E_dyn: ', E_dyn)
     print('dE_dyn: ', dE_dyn)
     print('------------')
@@ -116,7 +116,7 @@ def simulation(Nstars, Nclumps, t_end, dt):
 			print_diagnostics(t, stars_and_planets, energy, deltaE)
             
             io.write_set_to_file(gravity.particles, filename, 'csv',
-                                 attribute_types = (units.MSun, units.kpc, units.kpc, units.kpc, units.kms, units.kms, units.kms),
+                                 attribute_types = (units.MSun, units.parsec, units.parsec, units.parsec, units.kms, units.kms, units.kms),
                                  attribute_names = attributes)
             
             data_t = pd.read_csv(filename, names=list(attributes))
