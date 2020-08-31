@@ -93,11 +93,10 @@ def simulation(Nstars, Nclumps, t_end, dt):
 	energy_init = gravity.particles.potential_energy() + gravity.particles.kinetic_energy()
 
 	#for 3D numpy array storage
-	Nsavetimes = 100
+	Nsavetimes = 200
 	Ntotal = len(gravity.particles)
 	all_data = np.zeros((Nsavetimes+1, Ntotal, 6))
 	mass_data = np.zeros((Nsavetimes+1, Ntotal)) 
-	#COM_data = np.zeros((len(sim_times), Norbiters, 2))
 
 	#for saving in write_set_to_file
 	filename = 'data_temp.csv'
