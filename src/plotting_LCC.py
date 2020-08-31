@@ -66,9 +66,9 @@ for j, file in enumerate(phasespace_files):
     ax1.set_aspect('equal')
     
     ax1.plot(xvals_LCC_frame, yvals_LCC_frame, marker=',', c='k', lw=0, linestyle='')
-    half_light = plt.Circle(xy=(x_med, y_med), radius=15.48, color='r', linewidth=1)
-    ax1.add_artist(half_light)
     
+    half_light = plt.Circle((x_med, y_med), 15.48, color='r', fill=False)
+    plt.gcf().gca().add_artist(half_light)
     
     ax1.set_xlim(-100., 100.)
     ax1.set_ylim(-100., 100.)
@@ -82,14 +82,14 @@ for j, file in enumerate(phasespace_files):
     ax2.set_yscale('log')
     ax2.set_xlim(0., 150.)
     ax2.set_ylim(1e-3, 1e1)
-    ax2.plot(rvals_plot_naught, hist_naught, label=r'$n(r, t=0 {\rm Myr})$')
+    ax2.plot(rvals_plot_naught, hist_naught, label=r'$n(r, t=0 {\rm Myr})$', linewidth=0.5)
     
     if j > 0:
         
-        ax2.plot(rvals_plot, hist, label=r'$n(r, t= %i {\rm Myr})$'%(j))
+        ax2.plot(rvals_plot, hist, label=r'$n(r, t= %i {\rm Myr})$'%(j), linewidth=0.5)
     
-    ax2.legend(loc='lower right', fontsize=4)
-    ax2.axvline(x=15.48, label=r'$r_{\rm hl}(t=0)$', c='r', linewidth=1)
+    ax2.axvline(x=15.48, label=r'$r_{\rm hl}(t=0)$', c='k', linewidth=0.5)
+    ax2.legend(loc='center right', fontsize=6)
     ax2.annotate(r'$n_{\rm today}(r) \sim \left(1 + \left(\frac{r}{a}\right)^{2}\right)^{-\gamma/2}$', xy=(0.3, 0.9), xycoords='axes fraction', fontsize=6)
     ax2.annotate(r'$a = 50.1$ pc, $\gamma = 15.2$', xy=(0.3, 0.85), xycoords='axes fraction', fontsize=6)
     
@@ -99,5 +99,5 @@ for j, file in enumerate(phasespace_files):
     fig.suptitle('Lower Centaurus Crux model', fontsize=10)
     fig.tight_layout()
     fig.subplots_adjust(top=0.9)
-    fig.savefig('LCC_only_%s.jpg'%(str(j).rjust(6, '0')))
+    fig.savefig('LCC_only_%s.pdf'%(str(j).rjust(6, '0')))
     plt.close()

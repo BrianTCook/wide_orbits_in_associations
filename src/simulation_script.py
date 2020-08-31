@@ -49,10 +49,11 @@ def simulation(Nstars, Nclumps, t_end, dt):
 
 	t0 = time.time()
 
-	#stars_and_planets, gas = initial_conditions(nGas, nStars, diskMass, rMin, rMax, Q, diskmassfrac)
-	stars_and_planets = LCC_maker(Nstars, Nclumps)
-
-	eps = 1 | units.RSun
+    #stars_and_planets, gas = initial_conditions(nGas, nStars, diskMass, rMin, rMax, Q, diskmassfrac)
+    stars_and_planets = LCC_maker(Nstars, Nclumps)
+    np.savetxt('LCC_masses.txt', stars_and_planets.mass.value_in(units.MSun))
+    
+    eps = 1 | units.RSun
 
 	mass_gravity = stars_and_planets.mass.sum()
 	a_init = 15. | units.parsec #half-mass radius give or take
@@ -88,6 +89,7 @@ def simulation(Nstars, Nclumps, t_end, dt):
 	#gravhydro.timestep = dt
 
 	sim_times_unitless = np.arange(0., t_end.value_in(units.Myr), dt.value_in(units.Myr))
+    np.savetxt('sim_times_Myr.txt', sim_times_unitless)
 	sim_times = [ t|units.Myr for t in sim_times_unitless ]
 
 	cm = plt.cm.get_cmap('rainbow')
@@ -98,7 +100,8 @@ def simulation(Nstars, Nclumps, t_end, dt):
 	Nsavetimes = 100
 	Ntotal = len(gravity.particles)
 	all_data = np.zeros((Nsavetimes+1, Ntotal, 6))
-	mass_data = np.zeros((Nsavetimes+1, Ntotal))    
+	mass_data = np.zeros((Nsavetimes+1, Ntotal)) 
+    time_data = np.zeros((Nsavetimes+1, 1))
 	#COM_data = np.zeros((len(sim_times), Norbiters, 2))
 
 	#for saving in write_set_to_file
