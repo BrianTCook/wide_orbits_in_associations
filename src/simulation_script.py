@@ -23,6 +23,15 @@ from amuse.community.nbody6xx.interface import Nbody6xx
 from initial_conditions import initial_conditions
 from EFF_with_clumps import LCC_maker
 
+def print_diagnostics(time, simulation_bodies, E_dyn, dE_dyn):
+    
+    print('------------')
+    print('time: ', time)
+    print('simulation_bodies.center_of_mass(): ', simulation_bodies.center_of_mass().value_in(units.kpc))
+    print('E_dyn: ', E_dyn)
+    print('dE_dyn: ', dE_dyn)
+    print('------------')
+
 def simulation(Nstars, Nclumps, t_end, dt):
 
 	'''
@@ -81,55 +90,46 @@ def simulation(Nstars, Nclumps, t_end, dt):
 
 	energy_init = gravity.particles.potential_energy() + gravity.particles.kinetic_energy()
 
+    #for 3D numpy array storage
+    Nsavetimes = 100
+    all_data = np.zeros((Nsavetimes+1, Ntotal, 6))
+    mass_data = np.zeros((Nsavetimes+1, Ntotal))    
+    #COM_data = np.zeros((len(sim_times), Norbiters, 2))
+
+    #for saving in write_set_to_file
+    filename = 'data_temp.csv'
+    attributes = ('mass', 'x', 'y', 'z', 'vx', 'vy', 'vz')
+    
+    print('len(sim_times) is', len(sim_times))
+    saving_flag = int(math.floor(len(sim_times)/Nsavetimes))
+    
+    t0 = time.time()
+    j_like_index = 0
+
 	for j, t in enumerate(sim_times):
 
-		if j%200 == 0:
+		if j%saving_flag == 0:
 
 			energy = gravity.particles.potential_energy() + gravity.particles.kinetic_energy()
+			deltaE = energy/energy_init - 1.
 
-			deltaE = energy/energy_init - 1
+			print_diagnostics(t, stars_and_planets, energy, deltaE)
+            
+            io.write_set_to_file(gravity.particles, filename, 'csv',
+                                 attribute_types = (units.MSun, units.kpc, units.kpc, units.kpc, units.kms, units.kms, units.kms),
+                                 attribute_names = attributes)
+            
+            data_t = pd.read_csv(filename, names=list(attributes))
+            data_t = data_t.drop([0, 1, 2]) #removes labels units, and unit names
+            
+            masses = data_t['mass'].tolist()
+            mass_data[j_like_index, :len(data_t.index)] = masses #in solar masses
 
-			print('simulation time: ', t)
-			print('wall time: %.02f minutes'%((time.time()-t0)/60.))
-			print('energy change: %.02e'%(deltaE))
-			print()
-
-			#xvals_gas = gas.x.value_in(units.AU)
-			#yvals_gas = gas.y.value_in(units.AU)
-
-			xvals_stars_and_planets = stars_and_planets.x.value_in(units.parsec)
-			yvals_stars_and_planets = stars_and_planets.y.value_in(units.parsec)
-
-			x_med = np.median(xvals_stars_and_planets)
-			y_med = np.median(yvals_stars_and_planets)
-
-			print('zeroth particle: x = %.02f pc, y = %.02f pc'%(xvals_stars_and_planets[0], yvals_stars_and_planets[0]))
-
-			#xy = np.vstack([xvals_gas, yvals_gas])
-			#colors_gauss = gaussian_kde(xy)(xy)
-
-			plt.figure()
-			plt.gca().set_aspect('equal')
-			#plt.scatter(xvals_gas, yvals_gas, s=6, marker='.', c=colors_gauss, cmap=cm, linewidths=0, label='Protoplanetary Disk')
-			#plt.scatter(xvals_stars_and_planets[0], yvals_stars_and_planets[0], s=16, marker='*', c='k', label=r'Star ($M=M_{\odot}$)')
-			#plt.scatter(xvals_stars_and_planets[0:], yvals_stars_and_planets[0:], s=16, marker='.', c='k', label=r'Gas Giants (Solar System)')
-
-			plt.plot([ x-x_med for x in xvals_stars_and_planets ], [ y-y_med for y in yvals_stars_and_planets ], marker='*', markersize=1, c='k', lw=0, linestyle='')
-
-			plt.xlim(-100., 100.)
-			plt.ylim(-100., 100.)
-
-			plt.xlabel(r'$(x-\tilde{x})_{\rm LCC}$ (pc)', fontsize=12)
-			plt.ylabel(r'$(y-\tilde{y})_{\rm LCC}$ (pc)', fontsize=12)
-			plt.annotate(r'$t_{\rm sim} = %.02f$ Myr'%(t.value_in(units.Myr)), xy=(0.05, 0.95), xycoords='axes fraction', fontsize=8)
-			plt.annotate(r'$M_{\rm LCC} = %.01f \, M_{\odot}$'%(stars_and_planets.mass.sum().value_in(units.MSun)), xy=(0.05, 0.9), xycoords='axes fraction', fontsize=8)
-			plt.annotate(r'$\Sigma(r, t=0) \propto \left(1 + \left(\frac{r}{a}\right)^{2}\right)^{-\gamma/2}$', xy=(0.6, 0.95), xycoords='axes fraction', fontsize=8)
-			plt.annotate(r'$a = 50.1$ pc', xy=(0.6, 0.9), xycoords='axes fraction', fontsize=8)
-			plt.annotate(r'$\gamma = 15.2$', xy=(0.6, 0.85), xycoords='axes fraction', fontsize=8)
-			plt.title('Lower Centaurus Crux (EFF) model', fontsize=10)
-			plt.tight_layout()
-			plt.savefig('LCC_only_%s.png'%(str(j).rjust(6, '0')))
-			plt.close()
+            data_t = data_t.drop(columns=['mass']) #goes from 7D --> 6D
+            data_t = data_t.astype(float) #strings to floats
+    
+            all_data[j_like_index, :len(data_t.index), :] = data_t.values
+            np.savetxt('phasespace_frame_%s_LCC.ascii'%(str(j).rjust(5, '0')), data_t.values)
 
 		#gravhydro.evolve_model(t)
 		gravity.evolve_model(t)
