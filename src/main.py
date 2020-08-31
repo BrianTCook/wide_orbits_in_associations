@@ -40,8 +40,8 @@ def new_option_parser():
 	#optparser.add_option('--Q', dest='Q', type='float', default=1.)
 	#optparser.add_option('--diskmassfrac', dest='diskmassfrac', type='float', default=1.)
 
-	optparser.add_option('--t_end', dest='t_end', type='float', default=20.)
-	optparser.add_option('--dt', dest='dt', type='float', default=500.) #megayears
+	optparser.add_option('--t_end', dest='t_end', type='float', default=10.)
+	optparser.add_option('--dt', dest='dt', type='float', default=1000.) #megayears
 
 	return optparser
 

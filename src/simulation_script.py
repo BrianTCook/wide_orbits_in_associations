@@ -14,10 +14,8 @@ import matplotlib
 matplotlib.use('agg')
 import matplotlib.pyplot as plt
 
-#from galpy.df import quasiisothermaldf
 from galpy.potential import MWPotential2014, to_amuse
-#from galpy.util import bovy_conversion
-#from galpy.actionAngle import actionAngleStaeckel
+from galpy.util.bovy_conversion import mass_in_msol
 
 from amuse.lab import *
 from amuse.couple import bridge
@@ -95,7 +93,7 @@ def simulation(Nstars, Nclumps, t_end, dt):
 	energy_init = gravity.particles.potential_energy() + gravity.particles.kinetic_energy()
 
 	#for 3D numpy array storage
-	Nsavetimes = 200
+	Nsavetimes = 100
 	Ntotal = len(gravity.particles)
 	all_data = np.zeros((Nsavetimes+1, Ntotal, 6))
 	mass_data = np.zeros((Nsavetimes+1, Ntotal)) 
@@ -109,7 +107,7 @@ def simulation(Nstars, Nclumps, t_end, dt):
 	saving_flag = int(math.floor(len(sim_times)/Nsavetimes))
 
 	snapshot_times = []
-    snapshot_galaxy_masses = []
+	snapshot_galaxy_masses = []
 
 	t0 = time.time()
 	j_like_index = 0
@@ -137,7 +135,18 @@ def simulation(Nstars, Nclumps, t_end, dt):
 			np.savetxt('phasespace_frame_%s_LCC.ascii'%(str(j).rjust(5, '0')), data_t.values)
 
 			snapshot_times.append(t.value_in(units.Myr))
-            snapshot_times.append(t.value_in(units.Myr))
+
+			x_med, y_med, z_med = np.median(data_t['x']), np.median(data_t['y']), np.median(data_t['z'])
+
+			Mgal = 0. #in solar masses
+			Rgal, zgal = np.sqrt((x_med/1000.)**2. + (y_med/1000.)**2.), (z_med/1000.) #in kpc
+			R_GC = np.sqrt(Rgal**2. + zgal**2.) #in kpc
+
+			for pot in MWPotential2014:
+
+				Mgal += pot.mass(Rgal, zgal) * mass_in_msol(220., 8.)
+
+			snapshot_galaxy_masses.append(Mgal)
 
 		#gravhydro.evolve_model(t)
 		gravity.evolve_model(t)
@@ -145,6 +154,7 @@ def simulation(Nstars, Nclumps, t_end, dt):
 		#hydro_to_framework.copy()
 
 	np.savetxt('snapshot_times.txt', snapshot_times)
+	np.savetxt('snapshot_galaxy_masses.txt', snapshot_galaxy_masses)
 
 	gravity.stop()
 	#hydro.stop()
