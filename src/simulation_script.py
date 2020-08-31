@@ -64,7 +64,6 @@ def simulation(Nstars, Nclumps, t_end, dt):
 	association_code.commit_particles()
 
 	galaxy_code = to_amuse(MWPotential2014, t=0.0, tgalpy=0.0, reverse=False, ro=None, vo=None)
-
 	gravity = bridge.Bridge(use_threading=False)
 
 	gravity.add_system(association_code, (galaxy_code,))
@@ -110,6 +109,7 @@ def simulation(Nstars, Nclumps, t_end, dt):
 	saving_flag = int(math.floor(len(sim_times)/Nsavetimes))
 
 	snapshot_times = []
+    snapshot_galaxy_masses = []
 
 	t0 = time.time()
 	j_like_index = 0
@@ -137,6 +137,7 @@ def simulation(Nstars, Nclumps, t_end, dt):
 			np.savetxt('phasespace_frame_%s_LCC.ascii'%(str(j).rjust(5, '0')), data_t.values)
 
 			snapshot_times.append(t.value_in(units.Myr))
+            snapshot_times.append(t.value_in(units.Myr))
 
 		#gravhydro.evolve_model(t)
 		gravity.evolve_model(t)
