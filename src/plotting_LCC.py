@@ -17,6 +17,7 @@ wide_orbits_direc = '/Users/BrianTCook/Desktop/wide_orbits_in_associations/'
 
 phasespace_files = glob.glob(wide_orbits_direc + 'data/phasespace_*.ascii')
 times = np.loadtxt(wide_orbits_direc + 'data/snapshot_times.txt')
+galaxy_mass_list = np.loadtxt(wide_orbits_direc + 'data/snapshot_galaxy_masses.txt')
 masses = np.loadtxt(wide_orbits_direc + 'data/LCC_masses.txt')
 
 total_mass = np.sum(masses)
@@ -40,6 +41,8 @@ for j, file in enumerate(phasespace_files):
     x_med = np.median(xvals_stars_and_planets)
     y_med = np.median(yvals_stars_and_planets)
     z_med = np.median(zvals_stars_and_planets)
+    
+    R_GC = np.sqrt(x_med**2. + y_med**2. + z_med**2.)
         
     xvals_LCC_frame = [ x-x_med for x in xvals_stars_and_planets ]
     yvals_LCC_frame = [ y-y_med for y in yvals_stars_and_planets ]
@@ -77,6 +80,14 @@ for j, file in enumerate(phasespace_files):
     
     ax1.plot(xvals_LCC_frame, yvals_LCC_frame, marker=',', c='k', lw=0, linestyle='')
     ax1.plot(xcirc, ycirc, c='r', lw=.5, label=r'$r_{\rm half-light, 0}$')
+    
+    Jacobi_radius = R_GC * (total_mass/galaxy_mass_list[j])**(1/3.)
+    
+    xJ = [ Jacobi_radius * np.cos(angle) for angle in angles ]
+    yJ = [ Jacobi_radius * np.sin(angle) for angle in angles ]
+    
+    ax1.plot(xJ, yJ, c='g', lw=.5, label=r'$r_{tidal}$')
+    
     ax1.legend(loc='center right', fontsize=4)
     
     ax1.set_xlim(-100., 100.)
@@ -98,16 +109,15 @@ for j, file in enumerate(phasespace_files):
         ax2.plot(rvals_plot, hist, label=r'$n(r, t= %.01f \, {\rm Myr})$'%(times[j]), linewidth=0.5)
     
     ax2.axvline(x=hl_radius, label=r'$r_{\rm half-light}(t=0.0 \, {\rm Myr})$', c='r', linewidth=0.5)
-    Jacobi_radius = 100.
     ax2.axvline(x=Jacobi_radius, label=r'$r_{\rm tidal}(t=%.01f \, {\rm Myr})$'%(times[j]), c='g', linewidth=0.5)
-    ax2.legend(loc='center right', fontsize=6)
+    ax2.legend(loc='center right', fontsize=4)
     ax2.annotate(r'$n_{\rm today}(r) \propto \left(1 + \left(\frac{r}{a}\right)^{2}\right)^{-\gamma/2}$', xy=(0.3, 0.9), xycoords='axes fraction', fontsize=6)
     ax2.annotate(r'$a = 50.1$ pc, $\gamma = 15.2$', xy=(0.3, 0.85), xycoords='axes fraction', fontsize=6)
     
     ax2.set_xlabel(r'$r_{\rm LCC}$ (pc)', fontsize=12)
     ax2.set_ylabel(r'$n(r) \hspace{2mm} [N_{\star}/{\rm pc}^{2}]$', fontsize=12)
     
-    fig.suptitle('Lower Centaurus Crux model', fontsize=10)
+    fig.suptitle('Lower Centaurus Crux model', fontsize=14)
     fig.tight_layout()
     fig.subplots_adjust(top=0.9)
     fig.savefig('LCC_only_%s.pdf'%(str(j).rjust(6, '0')))
