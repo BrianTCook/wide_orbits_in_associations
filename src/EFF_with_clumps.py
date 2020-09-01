@@ -194,13 +194,16 @@ def LCC_maker(Nstars, Nclumps, time_reversal):
 	us, vs, ws = uvw_coords(Nstars, sigma_u, sigma_v, sigma_w)
 
 	#Kroupa distribution, biggest stars are A-type stars
-	masses = new_kroupa_mass_distribution(Nstars, 31.|units.MSun)
+	masses = np.loadtxt('/home/brian/Desktop/wide_orbits_in_associations/data/LCC_masses.txt')
 
+	#new_kroupa_mass_distribution(Nstars, 31.|units.MSun)
+
+	masses = [ m|units.MSun for m in masses ]
 	temps, lums = HR_diagram_info(masses)
 
-	np.savetxt('star_masses.txt', masses.value_in(units.MSun))
-	np.savetxt('star_temperatures.txt', temps)
-	np.savetxt('star_luminosities.txt', lums)
+	#np.savetxt('star_masses.txt', masses.value_in(units.MSun))
+	#np.savetxt('star_temperatures.txt', temps)
+	#np.savetxt('star_luminosities.txt', lums)
 
 	#give each star appropriate phase space coordinates, mass
 

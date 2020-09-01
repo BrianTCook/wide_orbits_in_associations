@@ -51,7 +51,7 @@ def simulation(Nstars, Nclumps, t_end, dt, time_reversal):
 	stars_and_planets = LCC_maker(Nstars, Nclumps, time_reversal)
 	masses = stars_and_planets.mass.value_in(units.MSun)
 
-	np.savetxt('LCC_masses.txt', masses)
+	#np.savetxt('LCC_masses.txt', masses)
 
 	print('total_mass: %.03f MSun'%(np.sum(masses)))
 
