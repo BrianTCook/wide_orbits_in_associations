@@ -25,16 +25,17 @@ from amuse.support import io
 from initial_conditions import initial_conditions
 from EFF_with_clumps import LCC_maker
 
-def print_diagnostics(time, simulation_bodies, E_dyn, dE_dyn):
+def print_diagnostics(sim_time, t0, simulation_bodies, E_dyn, dE_dyn):
     
 	print('------------')
-	print('time: ', time)
+	print('simulation time: ', sim_time)
+	print('wall time: %.03f minutes'%((time.time() - t0)/60.))
 	print('simulation_bodies.center_of_mass() in parsecs: ', simulation_bodies.center_of_mass().value_in(units.parsec))
 	print('E_dyn: ', E_dyn)
 	print('dE_dyn: %.04e'%(dE_dyn))
 	print('------------')
 
-def simulation(Nstars, Nclumps, t_end, dt):
+def simulation(Nstars, Nclumps, t_end, dt, time_reversal):
 
 	'''
 	for now, just makes one star
@@ -45,11 +46,14 @@ def simulation(Nstars, Nclumps, t_end, dt):
 	bridge them together
 	'''
 
-	t0 = time.time()
-
 	#stars_and_planets, gas = initial_conditions(nGas, nStars, diskMass, rMin, rMax, Q, diskmassfrac)
-	stars_and_planets = LCC_maker(Nstars, Nclumps)
-	np.savetxt('LCC_masses.txt', stars_and_planets.mass.value_in(units.MSun))
+
+	stars_and_planets = LCC_maker(Nstars, Nclumps, time_reversal)
+	masses = stars_and_planets.mass.value_in(units.MSun)
+
+	np.savetxt('LCC_masses.txt', masses)
+
+	print('total_mass: %.03f MSun'%(np.sum(masses)))
 
 	eps = 1 | units.RSun
 
@@ -85,6 +89,7 @@ def simulation(Nstars, Nclumps, t_end, dt):
 	#gravhydro.add_system(hydro, (gravity,))
 	#gravhydro.timestep = dt
 
+
 	sim_times_unitless = np.arange(0., t_end.value_in(units.Myr), dt.value_in(units.Myr))
 	sim_times = [ t|units.Myr for t in sim_times_unitless ]
 
@@ -93,7 +98,7 @@ def simulation(Nstars, Nclumps, t_end, dt):
 	energy_init = gravity.particles.potential_energy() + gravity.particles.kinetic_energy()
 
 	#for 3D numpy array storage
-	Nsavetimes = 200
+	Nsavetimes = 100
 	Ntotal = len(gravity.particles)
 	all_data = np.zeros((Nsavetimes+1, Ntotal, 6))
 	mass_data = np.zeros((Nsavetimes+1, Ntotal)) 
@@ -107,9 +112,14 @@ def simulation(Nstars, Nclumps, t_end, dt):
 
 	snapshot_times = []
 	snapshot_galaxy_masses = []
+	j_like_index = 0
+
+	if time_reversal == False:
+		forward_or_backward = 'forward'
+	else:
+		forward_or_backward = 'backward'
 
 	t0 = time.time()
-	j_like_index = 0
 
 	for j, t in enumerate(sim_times):
 
@@ -118,7 +128,7 @@ def simulation(Nstars, Nclumps, t_end, dt):
 			energy = gravity.particles.potential_energy() + gravity.particles.kinetic_energy()
 			deltaE = energy/energy_init - 1.
 
-			print_diagnostics(t, stars_and_planets, energy, deltaE)
+			print_diagnostics(t, t0, stars_and_planets, energy, deltaE)
             
 			io.write_set_to_file(gravity.particles, filename, 'csv',
 					 attribute_types = (units.MSun, units.parsec, units.parsec, units.parsec, units.kms, units.kms, units.kms),
@@ -131,7 +141,7 @@ def simulation(Nstars, Nclumps, t_end, dt):
 			data_t = data_t.astype(float) #strings to floats
 
 			all_data[j_like_index, :len(data_t.index), :] = data_t.values
-			np.savetxt('phasespace_frame_%s_LCC.ascii'%(str(j).rjust(5, '0')), data_t.values)
+			np.savetxt('phasespace_%s_frame_%s_LCC.ascii'%(forward_or_backward, str(j).rjust(5, '0')), data_t.values)
 
 			snapshot_times.append(t.value_in(units.Myr))
 
@@ -152,8 +162,8 @@ def simulation(Nstars, Nclumps, t_end, dt):
 		gravity_to_framework.copy()
 		#hydro_to_framework.copy()
 
-	np.savetxt('snapshot_times.txt', snapshot_times)
-	np.savetxt('snapshot_galaxy_masses.txt', snapshot_galaxy_masses)
+	np.savetxt('snapshot_times_%s.txt'%(forward_or_backward), snapshot_times)
+	np.savetxt('snapshot_galaxy_masses_%s.txt'%(forward_or_backward), snapshot_galaxy_masses)
 
 	gravity.stop()
 	#hydro.stop()

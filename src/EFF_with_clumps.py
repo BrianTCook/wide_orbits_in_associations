@@ -182,7 +182,7 @@ def uvw_coords(Nstars, sigma_u, sigma_v, sigma_w):
 
     return uvals, vvals, wvals
 
-def LCC_maker(Nstars, Nclumps):
+def LCC_maker(Nstars, Nclumps, time_reversal):
     
 	stars = Particles(Nstars)
 		    
@@ -212,15 +212,20 @@ def LCC_maker(Nstars, Nclumps):
 	XMW, YMW, ZMW = -8178.|units.parsec, 0.|units.parsec, 0|units.parsec
 	UMW, VMW, WMW = 10.|units.kms, 247.4|units.kms, 0.|units.kms 
 
+	if time_reversal == False:
+		time_arrow = 1. 
+	else:
+		time_arrow = -1.
+
 	for i, star in enumerate(stars):
 
 		star.x = (xs[i] | units.parsec) + X0 + XMW
 		star.y = (ys[i] | units.parsec) + Y0 + YMW
 		star.z = (zs[i] | units.parsec) + Z0 + ZMW
 
-		star.vx = (us[i] | units.kms) + U0 + UMW
-		star.vy = (vs[i] | units.kms) + V0 + VMW
-		star.vz = (ws[i] | units.kms) + W0 + WMW
+		star.vx = time_arrow * ( (us[i] | units.kms) + U0 + UMW )
+		star.vy = time_arrow * ( (vs[i] | units.kms) + V0 + VMW )
+		star.vz = time_arrow * ( (ws[i] | units.kms) + W0 + WMW )
 
 		star.mass = masses[i]
 		star.luminosity = lums[i]
