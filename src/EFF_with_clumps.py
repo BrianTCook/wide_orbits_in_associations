@@ -174,24 +174,33 @@ def xyz_coords(Nstars, Nclumps, a, gamma):
 	return xvals, yvals, zvals
     
     
-def uvw_coords(Nstars, sigma_u, sigma_v, sigma_w):
+def uvw_coords(Nstars, xs, ys, zs, sigma_squared_max, a):
     
-    uvals = np.random.normal(loc=0., scale=sigma_u, size=(Nstars,))
-    vvals = np.random.normal(loc=0., scale=sigma_v, size=(Nstars,))
-    wvals = np.random.normal(loc=0., scale=sigma_w, size=(Nstars,))
+	rs = [ np.sqrt(x**2. + y**2. + z**2.) for x, y, z in zip(xs, ys, zs) ]
+	stdevs = [ np.sqrt(sigma_squared_max * r/a) for r in rs ] #standard deviation of velocity dispersions
 
-    return uvals, vvals, wvals
+	speeds = [ np.random.normal(loc=0., scale=std) for std in stdevs ] #in km/s
+
+	random_directions = [ np.random.rand(3,) for i in range(Nstars) ]
+	normalized_directions = [ direc/np.linalg.norm(direc) for direc in random_directions ]
+
+	velocities = [ speeds[i] * normalized_directions[i] for i in range(Nstars) ]
+
+	uvals = [ vel[0] for vel in velocities ]
+	vvals = [ vel[1] for vel in velocities ]
+	wvals = [ vel[2] for vel in velocities ]
+
+	return uvals, vvals, wvals
 
 def LCC_maker(Nstars, Nclumps, time_reversal):
     
 	stars = Particles(Nstars)
 		    
 	#LCC model using EFF formalism and measured velocity dispersions
-	a, gamma = 50.1, 15.2
-	sigma_u, sigma_v, sigma_w = 1.89, 0.9, 0.51
+	a, gamma, sigma_squared_max = 50.1, 15.2, 2.15
 
 	xs, ys, zs = xyz_coords(Nstars, Nclumps, a, gamma)
-	us, vs, ws = uvw_coords(Nstars, sigma_u, sigma_v, sigma_w)
+	us, vs, ws = uvw_coords(Nstars, xs, ys, zs, sigma_squared_max, a)
 
 	#Kroupa distribution, biggest stars are A-type stars
 	masses = np.loadtxt('/home/brian/Desktop/wide_orbits_in_associations/data/LCC_masses.txt')
