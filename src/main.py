@@ -13,13 +13,13 @@ from amuse.units.optparse import OptionParser
 
 from simulation_script import simulation
 
-def main(Nstars, Nclumps, t_end, dt):
+def main(Nstars, Nclumps):#, t_end, dt):
 
-	t_end = t_end|units.Myr
-	dt = dt|units.yr
+	#t_end = t_end|units.Myr
+	#dt = dt|units.yr
 
-	simulation(Nstars, Nclumps, t_end, dt, time_reversal=False)
-	simulation(Nstars, Nclumps, t_end, dt, time_reversal=True)
+	simulation(Nstars, Nclumps)#, t_end, dt, time_reversal=False)
+	#simulation(Nstars, Nclumps, t_end, dt, time_reversal=True)
 
 def new_option_parser():
 
@@ -28,17 +28,11 @@ def new_option_parser():
 	'''
 
 	optparser = OptionParser()
-	#optparser.add_option('--nGas', dest='nGas', type='int', default=50000)
 	optparser.add_option('--Nstars', dest='Nstars', type='int', default=1800)
 	optparser.add_option('--Nclumps', dest='Nclumps', type='int', default=4)
-	#optparser.add_option('--diskMass', dest='diskMass', type='float', default=1.0)
-	#optparser.add_option('--rMin', dest='rMin', type='float', default=1.)
-	#optparser.add_option('--rMax', dest='rMax', type='float', default=100.)
-	#optparser.add_option('--Q', dest='Q', type='float', default=1.)
-	#optparser.add_option('--diskmassfrac', dest='diskmassfrac', type='float', default=1.)
 
-	optparser.add_option('--t_end', dest='t_end', type='float', default=16.)
-	optparser.add_option('--dt', dest='dt', type='float', default=5000.) #megayears
+	#optparser.add_option('--t_end', dest='t_end', type='float', default=16.)
+	#optparser.add_option('--dt_tdyn_ratio', dest='dt_tdyn_ratio', type='float', default=5000.) #megayears
 
 	return optparser
 

@@ -35,7 +35,7 @@ def print_diagnostics(sim_time, t0, simulation_bodies, E_dyn, dE_dyn):
 	print('dE_dyn: %.04e'%(dE_dyn))
 	print('------------')
 
-def simulation(Nstars, Nclumps, t_end, dt, time_reversal):
+def simulation(Nstars, Nclumps):#, t_end, dt, time_reversal):
 
 	'''
 	for now, just makes one star
@@ -46,127 +46,156 @@ def simulation(Nstars, Nclumps, t_end, dt, time_reversal):
 	bridge them together
 	'''
 
-	#stars_and_planets, gas = initial_conditions(nGas, nStars, diskMass, rMin, rMax, Q, diskmassfrac)
+	time_reversal = True
+	time_ratios = [ 1e-4, 5e-4, 1e-3, 5e-3, 1e-2, 5e-2, 1e-1, 5e-1 ]
 
-	stars_and_planets = LCC_maker(Nstars, Nclumps, time_reversal)
-	masses = stars_and_planets.mass.value_in(units.MSun)
+	for k, dt_tdyn_ratio in enumerate(time_ratios):
 
-	#np.savetxt('LCC_masses.txt', masses)
+		#stars_and_planets, gas = initial_conditions(nGas, nStars, diskMass, rMin, rMax, Q, diskmassfrac)
 
-	print('total_mass: %.03f MSun'%(np.sum(masses)))
+		stars_and_planets = LCC_maker(Nstars, Nclumps, time_reversal)
+		masses = stars_and_planets.mass.value_in(units.MSun)
 
-	eps = 1 | units.RSun
+		a, gamma, eta = 50.1|units.parsec, 15.2, 9.1
 
-	mass_gravity = stars_and_planets.mass.sum()
-	a_init = 15. | units.parsec #half-mass radius give or take
-	converter_gravity = nbody_system.nbody_to_si(mass_gravity, a_init)
-	
-	association_code = ph4(converter_gravity)
-	association_code.particles.add_particles(stars_and_planets)
-	association_code.commit_particles()
+		cluster_mass = stars_and_planets.mass.sum()
+		r_halflight = a * np.sqrt(4**(1./gamma) - 1.)
+		r_virial = eta/6. * r_halflight
 
-	galaxy_code = to_amuse(MWPotential2014, t=0.0, tgalpy=0.0, reverse=False, ro=None, vo=None)
-	gravity = bridge.Bridge(use_threading=False)
+		t_dyn = np.sqrt(r_virial**3. / (constants.G * cluster_mass))
 
-	gravity.add_system(association_code, (galaxy_code,))
-	print(gravity)
+		print('-----------------------------------------')
+		print('LCC dynamical time at present: %.04e Myr'%(t_dyn.value_in(units.Myr)))
+		print('total_mass: %.03f MSun'%(np.sum(masses)))
+		print('-----------------------------------------')
 
-	#internal_bodies = gas
-	#mass_gas = gas.mass.sum()
-	#converter_hydro = nbody_system.nbody_to_si(mass_gas, 1.|units.AU)
+		#np.savetxt('LCC_masses.txt', masses)
 
-	#hydro = Fi(converter_hydro, mode='openmp')
-	#hydro.gas_particles.add_particles(gas)
+		eps = 1 | units.RSun
 
-	#gravity.parameters.epsilon_squared = eps**2
-	#hydro.parameters.epsilon_squared = eps**2
+		mass_gravity = stars_and_planets.mass.sum()
+		a_init = 15. | units.parsec #half-mass radius give or take
+		converter_gravity = nbody_system.nbody_to_si(mass_gravity, a_init)
+		
+		association_code = ph4(converter_gravity)
+		association_code.particles.add_particles(stars_and_planets)
+		association_code.commit_particles()
 
-	gravity_to_framework = gravity.particles.new_channel_to(stars_and_planets)
-	#hydro_to_framework = hydro.gas_particles.new_channel_to(gas)
+		galaxy_code = to_amuse(MWPotential2014, t=0.0, tgalpy=0.0, reverse=False, ro=None, vo=None)
 
-	#gravhydro = bridge.Bridge()
-	#gravhydro.add_system(gravity, (hydro,))
-	#gravhydro.add_system(hydro, (gravity,))
-	#gravhydro.timestep = dt
+		gravity = association_code
 
+		#gravity = bridge.Bridge(use_threading=False)
 
-	sim_times_unitless = np.arange(0., t_end.value_in(units.Myr), dt.value_in(units.Myr))
-	sim_times = [ t|units.Myr for t in sim_times_unitless ]
+		#gravity.add_system(association_code, (galaxy_code,))
+		print(gravity)
 
-	cm = plt.cm.get_cmap('rainbow')
+		#internal_bodies = gas
+		#mass_gas = gas.mass.sum()
+		#converter_hydro = nbody_system.nbody_to_si(mass_gas, 1.|units.AU)
 
-	energy_init = gravity.particles.potential_energy() + gravity.particles.kinetic_energy()
+		#hydro = Fi(converter_hydro, mode='openmp')
+		#hydro.gas_particles.add_particles(gas)
 
-	#for 3D numpy array storage
-	Nsavetimes = 100
-	Ntotal = len(gravity.particles)
-	all_data = np.zeros((Nsavetimes+1, Ntotal, 6))
-	mass_data = np.zeros((Nsavetimes+1, Ntotal)) 
+		#gravity.parameters.epsilon_squared = eps**2
+		#hydro.parameters.epsilon_squared = eps**2
 
-	#for saving in write_set_to_file
-	filename = 'data_temp.csv'
-	attributes = ('mass', 'x', 'y', 'z', 'vx', 'vy', 'vz')
+		gravity_to_framework = gravity.particles.new_channel_to(stars_and_planets)
+		#hydro_to_framework = hydro.gas_particles.new_channel_to(gas)
 
-	print('len(sim_times) is', len(sim_times))
-	saving_flag = int(math.floor(len(sim_times)/Nsavetimes))
+		#gravhydro = bridge.Bridge()
+		#gravhydro.add_system(gravity, (hydro,))
+		#gravhydro.add_system(hydro, (gravity,))
+		#gravhydro.timestep = dt
 
-	snapshot_times = []
-	snapshot_galaxy_masses = []
-	j_like_index = 0
+		sim_times_unitless = np.arange(0., t_dyn.value_in(units.Myr), dt_tdyn_ratio * t_dyn.value_in(units.Myr))
+		sim_times = [ t|units.Myr for t in sim_times_unitless ]
 
-	if time_reversal == False:
-		forward_or_backward = 'forward'
-	else:
-		forward_or_backward = 'backward'
+		cm = plt.cm.get_cmap('rainbow')
 
-	t0 = time.time()
+		energy_init = gravity.particles.potential_energy() + gravity.particles.kinetic_energy()
 
-	for j, t in enumerate(sim_times):
+		#for 3D numpy array storage
+		Nsavetimes = 50
+		Ntotal = len(gravity.particles)
+		all_data = np.zeros((Nsavetimes+1, Ntotal, 6))
+		energy_data = np.zeros(Nsavetimes+1)
+		time_data = np.zeros(Nsavetimes+1) 
 
-		if j%saving_flag == 0:
+		#for saving in write_set_to_file
+		filename = 'data_temp.csv'
+		attributes = ('mass', 'x', 'y', 'z', 'vx', 'vy', 'vz')
 
-			energy = gravity.particles.potential_energy() + gravity.particles.kinetic_energy()
-			deltaE = energy/energy_init - 1.
+		print('len(sim_times) is', len(sim_times))
+		saving_flag = int(math.floor(len(sim_times)/Nsavetimes))
 
-			print_diagnostics(t, t0, stars_and_planets, energy, deltaE)
-            
-			io.write_set_to_file(gravity.particles, filename, 'csv',
-					 attribute_types = (units.MSun, units.parsec, units.parsec, units.parsec, units.kms, units.kms, units.kms),
-					 attribute_names = attributes)
+		snapshot_times = []
+		snapshot_galaxy_masses = []
+		j_like_index = 0
 
-			data_t = pd.read_csv(filename, names=list(attributes))
-			data_t = data_t.drop([0, 1, 2]) #removes labels units, and unit names
+		if time_reversal == False:
+			forward_or_backward = 'forward'
+		else:
+			forward_or_backward = 'backward'
 
-			data_t = data_t.drop(columns=['mass']) #goes from 7D --> 6D
-			data_t = data_t.astype(float) #strings to floats
+		t0 = time.time()
 
-			all_data[j_like_index, :len(data_t.index), :] = data_t.values
-			np.savetxt('phasespace_%s_frame_%s_LCC.ascii'%(forward_or_backward, str(j).rjust(5, '0')), data_t.values)
+		for j, t in enumerate(sim_times):
 
-			snapshot_times.append(t.value_in(units.Myr))
+			if j%saving_flag == 0:
 
-			x_med, y_med, z_med = np.median(data_t['x']), np.median(data_t['y']), np.median(data_t['z'])
+				energy = gravity.particles.potential_energy() + gravity.particles.kinetic_energy()
+				deltaE = energy/energy_init - 1.
 
-			Mgal = 0. #in solar masses
-			Rgal, zgal = np.sqrt((x_med/1000.)**2. + (y_med/1000.)**2.), (z_med/1000.) #in kpc
-			R_GC = np.sqrt(Rgal**2. + zgal**2.) #in kpc
+				print_diagnostics(t, t0, stars_and_planets, energy, deltaE)
 
-			for pot in MWPotential2014:
+				energy_data[j_like_index] = deltaE
+				time_data[j_like_index] = t.value_in(units.Myr)
 
-				Mgal += pot.mass(Rgal, zgal) * mass_in_msol(220., 8.)
+				j_like_index += 1
+		    
+				'''
+				io.write_set_to_file(gravity.particles, filename, 'csv',
+						 attribute_types = (units.MSun, units.parsec, units.parsec, units.parsec, units.kms, units.kms, units.kms),
+						 attribute_names = attributes)
 
-			snapshot_galaxy_masses.append(Mgal)
+				data_t = pd.read_csv(filename, names=list(attributes))
+				data_t = data_t.drop([0, 1, 2]) #removes labels units, and unit names
 
-		#gravhydro.evolve_model(t)
-		gravity.evolve_model(t)
-		gravity_to_framework.copy()
-		#hydro_to_framework.copy()
+				data_t = data_t.drop(columns=['mass']) #goes from 7D --> 6D
+				data_t = data_t.astype(float) #strings to floats
 
-	np.savetxt('snapshot_times_%s.txt'%(forward_or_backward), snapshot_times)
-	np.savetxt('snapshot_galaxy_masses_%s.txt'%(forward_or_backward), snapshot_galaxy_masses)
+				all_data[j_like_index, :len(data_t.index), :] = data_t.values
+				np.savetxt('phasespace_%s_frame_%s_LCC.ascii'%(forward_or_backward, str(j).rjust(5, '0')), data_t.values)
 
-	gravity.stop()
-	#hydro.stop()
+				snapshot_times.append(t.value_in(units.Myr))
+
+				x_med, y_med, z_med = np.median(data_t['x']), np.median(data_t['y']), np.median(data_t['z'])
+
+				Mgal = 0. #in solar masses
+				Rgal, zgal = np.sqrt((x_med/1000.)**2. + (y_med/1000.)**2.), (z_med/1000.) #in kpc
+				R_GC = np.sqrt(Rgal**2. + zgal**2.) #in kpc
+
+				for pot in MWPotential2014:
+
+					Mgal += pot.mass(Rgal, zgal) * mass_in_msol(220., 8.)
+
+				snapshot_galaxy_masses.append(Mgal)
+				'''
+
+			#gravhydro.evolve_model(t)
+			gravity.evolve_model(t)
+			gravity_to_framework.copy()
+			#hydro_to_framework.copy()
+
+		#np.savetxt('snapshot_times_%s.txt'%(forward_or_backward), snapshot_times)
+		#np.savetxt('snapshot_galaxy_masses_%s.txt'%(forward_or_backward), snapshot_galaxy_masses)
+
+		np.savetxt('delta_energies_%i.txt'%(k), energy_data)
+		np.savetxt('energy_times_%i.txt'%(k), time_data)
+
+		gravity.stop()
+		#hydro.stop()
 
 	return 1
 
