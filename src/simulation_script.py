@@ -47,7 +47,9 @@ def simulation(Nstars, Nclumps):#, t_end, dt, time_reversal):
 	'''
 
 	time_reversal = True
-	time_ratios = [ 1e-4, 5e-4, 1e-3, 5e-3, 1e-2, 5e-2, 1e-1, 5e-1 ]
+	time_ratios = [ 10**(-5.), 10**(-4.5), 10**(-4.), 10**(-3.5), 10**(-3.), 10**(-2.5), 10**(-2.) ]
+
+	print(time_ratios)
 
 	for k, dt_tdyn_ratio in enumerate(time_ratios):
 
