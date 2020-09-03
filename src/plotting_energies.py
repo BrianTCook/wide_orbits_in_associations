@@ -19,7 +19,7 @@ energy_direc = wide_orbits_direc + 'data/LCC_energy_conservation/'
 time_files = glob.glob(energy_direc + 'energy_times_*.txt')
 energy_files = glob.glob(energy_direc + 'delta_energies_*.txt')
 
-ratios = [ 1e-4, 5e-4, 1e-3, 5e-3, 1e-2 ]
+ratios = [ 10**(-5.), 10**(-4.5), 10**(-4.), 10**(-3.5), 10**(-3.) ]
 
 plt.figure(figsize=(5,5))
 
@@ -38,3 +38,4 @@ for dt_ratio, time_file, energy_file in zip(ratios, time_files, energy_files):
 plt.legend(bbox_to_anchor=(1.05, 0.5), loc='center left', fontsize=10)
 plt.xlabel(r'$t_{\rm sim} [{\rm Myr}]$', fontsize=16) 
 plt.ylabel(r'$|\Delta E|/E(t=0)$', fontsize=16) 
+plt.savefig('energy_conservation.pdf')
