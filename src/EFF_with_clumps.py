@@ -35,16 +35,18 @@ def find_nearest_index(value, array):
 	return idx
 
 def enclosed_mass(mass_association, r, a, gamma):
-    
-        #normalizing factor has to be 
-        eps_m = np.finfo(float).eps #machine precision
-        
-        r_max = a * np.sqrt(eps_m**(-2./gamma) - 1)
-        rho_0 = 3 * mass_association / ( 4 * np.pi * r_max**3. )
-        
-        mass_enc = (4*np.pi / 3.) * rho_0 * r**(3.) * hyp2f1(3/2., (gamma+1.)/2., 5/2., -(r/a)**2.)
-        
-        return mass_enc #no units, although we will need in terms of MSun
+
+	#normalizing factor has to be 
+	eps_m = np.finfo(float).eps #machine precision
+
+	r_max = a * np.sqrt(eps_m**(-2./gamma) - 1) #parsecs
+	rho_0 = 3 * mass_association / ( 4 * np.pi * r_max**3. ) #solar masses per parsec
+
+	mass_enc = (4*np.pi / 3.) * rho_0 * r**(3.) * hyp2f1(3/2., (gamma+1.)/2., 5/2., -(r/a)**2.) #solar masses
+
+	print(r_max, rho_0, mass_enc)
+
+	return mass_enc #no units, although we will need in terms of MSun
     
 def xyz_coords(mass_association, Nclumps, a, gamma):
 
@@ -66,13 +68,15 @@ def xyz_coords(mass_association, Nclumps, a, gamma):
 
 	cdf = [ enclosed_mass(mass_association, r, a, gamma) for r in bin_centers ]
 
+	print('cdf all bins: ', cdf)
+
 	allowances = [ 0 for i in range(Nbins) ]
 
 	for i in range(Nbins):
 
 		allowances[i] = int(cdf[i] - np.sum(allowances[:i]))	 #mass per slice allowed
 
-    print('allowances in first 50 bins: ', allowances[:50])
+	print('allowances in first 50 bins: ', allowances[:50])
 
 	bin_masses =  [ 0. for i in range(Nbins) ]
 
@@ -80,7 +84,7 @@ def xyz_coords(mass_association, Nclumps, a, gamma):
 
 	while np.sum(bin_masses) < mass_association:
 
-		print('assigned masses: %.03f MSun'%(np.sum(bin_masses)))
+		#print('assigned masses: %.03f MSun'%(np.sum(bin_masses)))
 		rval_proposed = r_max * np.random.rand() #pc
 
 		idx_bin = find_nearest_index(rval_proposed, bin_centers)	
@@ -96,8 +100,6 @@ def xyz_coords(mass_association, Nclumps, a, gamma):
 
 		new_member_masses = new_kroupa_mass_distribution(new_members, 17.5|units.MSun)
 		new_bin_mass = bin_masses[idx_bin] + new_member_masses.sum().value_in(units.MSun)
-
-        print('new_member_masses in Msun: ', new_member_masses)
 
 		if new_bin_mass < 1.05 * allowances[idx_bin]:
 
