@@ -72,6 +72,8 @@ def xyz_coords(mass_association, Nclumps, a, gamma):
 
 		allowances[i] = int(cdf[i] - np.sum(allowances[:i]))	 #mass per slice allowed
 
+    print('allowances in first 50 bins: ', allowances[:50])
+
 	bin_masses =  [ 0. for i in range(Nbins) ]
 
 	clump_flag = 0
@@ -94,6 +96,8 @@ def xyz_coords(mass_association, Nclumps, a, gamma):
 
 		new_member_masses = new_kroupa_mass_distribution(new_members, 17.5|units.MSun)
 		new_bin_mass = bin_masses[idx_bin] + new_member_masses.sum().value_in(units.MSun)
+
+        print('new_member_masses in Msun: ', new_member_masses)
 
 		if new_bin_mass < 1.05 * allowances[idx_bin]:
 
