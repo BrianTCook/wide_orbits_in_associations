@@ -13,13 +13,9 @@ from amuse.units.optparse import OptionParser
 
 from simulation_script import simulation
 
-def main(Nstars, Nclumps):#, t_end, dt):
+def main(mass_association, Nclumps):
 
-	#t_end = t_end|units.Myr
-	#dt = dt|units.yr
-
-	simulation(Nstars, Nclumps)#, t_end, dt, time_reversal=False)
-	#simulation(Nstars, Nclumps, t_end, dt, time_reversal=True)
+	simulation(mass_association, Nclumps, time_reversal=True)
 
 def new_option_parser():
 
@@ -28,11 +24,8 @@ def new_option_parser():
 	'''
 
 	optparser = OptionParser()
-	optparser.add_option('--Nstars', dest='Nstars', type='int', default=1800)
+	optparser.add_option('--mass_association', dest='mass_association', type='float', default=700.)
 	optparser.add_option('--Nclumps', dest='Nclumps', type='int', default=4)
-
-	#optparser.add_option('--t_end', dest='t_end', type='float', default=16.)
-	#optparser.add_option('--dt_tdyn_ratio', dest='dt_tdyn_ratio', type='float', default=5000.) #megayears
 
 	return optparser
 

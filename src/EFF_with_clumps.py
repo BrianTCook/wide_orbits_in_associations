@@ -34,7 +34,7 @@ def find_nearest_index(value, array):
 
 	return idx
 
-def EFF_values(mass_association, r, a, gamma):
+def enclosed_mass(mass_association, r, a, gamma):
     
         #normalizing factor has to be 
         eps_m = np.finfo(float).eps #machine precision
@@ -55,16 +55,16 @@ def xyz_coords(mass_association, Nclumps, a, gamma):
 
 	Nbins = 500
     
-    eps_m = np.finfo(float).eps #machine precision
-    r_max = a * np.sqrt(eps_m**(-2./gamma) - 1)
-    print('r_max: %.03f pc'%(r_max))
+	eps_m = np.finfo(float).eps #machine precision
+	r_max = a * np.sqrt(eps_m**(-2./gamma) - 1)
+	print('r_max: %.03f pc'%(r_max))
     
 	bin_edges = np.linspace(0., r_max, Nbins+1) #edges of bins in parsecs
 	bin_centers = [ 0.5*(bin_edges[i] + bin_edges[i+1]) for i in range(Nbins) ]
 
 	eps_x, eps_y, eps_z = 0.1, 0.1, 0.1 #parsecs, for perturbation purposes
 
-	cdf = [ enclosed_mass(mass_association, r, a, gamma) for i in range(Nbins) ]
+	cdf = [ enclosed_mass(mass_association, r, a, gamma) for r in bin_centers ]
 
 	allowances = [ 0 for i in range(Nbins) ]
 
@@ -78,6 +78,7 @@ def xyz_coords(mass_association, Nclumps, a, gamma):
 
 	while np.sum(bin_masses) < mass_association:
 
+		print('assigned masses: %.03f MSun'%(np.sum(bin_masses)))
 		rval_proposed = r_max * np.random.rand() #pc
 
 		idx_bin = find_nearest_index(rval_proposed, bin_centers)	
@@ -91,10 +92,10 @@ def xyz_coords(mass_association, Nclumps, a, gamma):
 
 			new_members = 1
 
-        new_member_masses = new_kroupa_mass_distribution(new_members, 17.5|units.MSun)
+		new_member_masses = new_kroupa_mass_distribution(new_members, 17.5|units.MSun)
 		new_bin_mass = bin_masses[idx_bin] + new_member_masses.sum().value_in(units.MSun)
 
-		if new_bin_pmass < 1.05 * allowances[idx_bin]:
+		if new_bin_mass < 1.05 * allowances[idx_bin]:
 
 			if clump_flag < Nclumps:
 				clump_flag += 1
@@ -117,24 +118,26 @@ def xyz_coords(mass_association, Nclumps, a, gamma):
 			xvals.append(xvals_new)
 			yvals.append(yvals_new)
 			zvals.append(zvals_new)
-            star_masses.append(new_member_masses)
+			star_masses.append(new_member_masses)
 
 			bin_masses[idx_bin] = new_bin_mass
 
 	xvals = [ j for i in xvals for j in i ]
 	yvals = [ j for i in yvals for j in i ]
 	zvals = [ j for i in zvals for j in i ]
-    star_masses = [ j for i in star_masses for j in i ]
+	star_masses = [ j for i in star_masses for j in i ]
 
 	return xvals, yvals, zvals, star_masses
     
     
-def uvw_coords(Nstars, xs, ys, zs, sigma_squared_max, a):
+def uvw_coords(xs, ys, zs, sigma_squared_max, a):
     
 	rs = [ np.sqrt(x**2. + y**2. + z**2.) for x, y, z in zip(xs, ys, zs) ]
 	stdevs = [ np.sqrt(sigma_squared_max * r/a) for r in rs ] #standard deviation of velocity dispersions
 
 	speeds = [ np.random.normal(loc=0., scale=std) for std in stdevs ] #in km/s
+
+	Nstars = len(masses)
 
 	random_directions = [ np.random.rand(3,) for i in range(Nstars) ]
 	normalized_directions = [ direc/np.linalg.norm(direc) for direc in random_directions ]
@@ -147,18 +150,18 @@ def uvw_coords(Nstars, xs, ys, zs, sigma_squared_max, a):
 
 	return uvals, vvals, wvals
 
-def LCC_maker(Nstars, Nclumps, time_reversal):
+def LCC_maker(mass_association, Nclumps, time_reversal):
     
 		    
 	#LCC model using EFF formalism and measured velocity dispersions
 	a, gamma, sigma_squared_max = 50.1, 15.2, 2.15
 
     #Kroupa distribution, biggest stars are A-type stars
-	xs, ys, zs, masses = xyz_coords(Nstars, Nclumps, a, gamma)
-	us, vs, ws = uvw_coords(Nstars, xs, ys, zs, sigma_squared_max, a)
+	xs, ys, zs, masses = xyz_coords(mass_association, Nclumps, a, gamma)
+	us, vs, ws = uvw_coords(xs, ys, zs, sigma_squared_max, a)
 
-    Nstars = len(masses)
-    stars = Particles(Nstars)
+	Nstars = len(masses)
+	stars = Particles(Nstars)
 
 	masses = [ m|units.MSun for m in masses ]
     
