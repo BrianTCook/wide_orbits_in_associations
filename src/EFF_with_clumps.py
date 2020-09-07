@@ -34,17 +34,39 @@ def find_nearest_index(value, array):
 
 	return idx
 
-def enclosed_mass(mass_association, r, a, gamma):
+def r_max_finder(mass_association, a, gamma):
+    
+    #normalizing factor has to be 
+	min_star_mass = np.amin(new_kroupa_mass_distribution(1000, 17.5|units.MSun).value_in(units.MSun))
 
-	#normalizing factor has to be 
-	eps_m = np.finfo(float).eps #machine precision
+    delta_r = 1.|units.parsec
 
-	r_max = a * np.sqrt(eps_m**(-2./gamma) - 1) #parsecs
+    matching_value = 1/3. * (a/delta_r) * min_star_mass / M_assoc
+    
+    def f(u):
+        
+        return 1/u * (1+u**(2.))**(gamma/2.)
+    
+    u_min, u_max = 1e-3, 20.
+    
+    while np.abs(u_max - u_min) < 1e-12:
+        
+        f1, f2 = f(u_min), f(u_max)
+        
+        if np.abs(f1 - matching_value) < np.abs(f2-matching_value):
+            
+            u_min = 0.5*(u_min + u_max)
+            
+        else:
+            
+            u_max = 0.5*(u_min + u_max)
+            
+    return 0.5*(u_min + u_max)
+
+def enclosed_mass(mass_association, r, a, gamma, r_max):
+    
 	rho_0 = 3 * mass_association / ( 4 * np.pi * r_max**3. ) #solar masses per parsec
-
 	mass_enc = (4*np.pi / 3.) * rho_0 * r**(3.) * hyp2f1(3/2., (gamma+1.)/2., 5/2., -(r/a)**2.) #solar masses
-
-	print(r_max, rho_0, mass_enc)
 
 	return mass_enc #no units, although we will need in terms of MSun
     
@@ -57,8 +79,7 @@ def xyz_coords(mass_association, Nclumps, a, gamma):
 
 	Nbins = 500
     
-	eps_m = np.finfo(float).eps #machine precision
-	r_max = a * np.sqrt(eps_m**(-2./gamma) - 1)
+	r_max = r_max_finder(mass_association, a, gamma)
 	print('r_max: %.03f pc'%(r_max))
     
 	bin_edges = np.linspace(0., r_max, Nbins+1) #edges of bins in parsecs
@@ -66,7 +87,7 @@ def xyz_coords(mass_association, Nclumps, a, gamma):
 
 	eps_x, eps_y, eps_z = 0.1, 0.1, 0.1 #parsecs, for perturbation purposes
 
-	cdf = [ enclosed_mass(mass_association, r, a, gamma) for r in bin_centers ]
+	cdf = [ enclosed_mass(mass_association, r, a, gamma, r_max) for r in bin_centers ]
 
 	print('cdf all bins: ', cdf)
 
