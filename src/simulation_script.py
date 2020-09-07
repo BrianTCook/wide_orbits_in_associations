@@ -52,17 +52,11 @@ def simulation(Nstars, Nclumps):#, t_end, dt, time_reversal):
 	time_ratios = [ 10**(i) for i in np.linspace(-3., -1., 17) ]
 	print(np.linspace(-3., -1., 17))
 
-	codes = [ 'BHTree', 'ph4', 'Hermite' ]
-	background_bools = [ False ]
+	parent_code = Hermite
 
 	fig, axs = plt.subplots(ncols=len(background_bools), figsize=(5,5))
 
 	for back_bool in background_bools:
-
-		if back_bool == False and len(background_bools) == 1:
-			ax = axs#[0]
-		if back_bool == True:
-			ax = axs[1]
 
 		for code in codes:
 
@@ -95,31 +89,15 @@ def simulation(Nstars, Nclumps):#, t_end, dt, time_reversal):
 				mass_gravity = stars_and_planets.mass.sum()
 				a_init = r_virial
 				converter_gravity = nbody_system.nbody_to_si(mass_gravity, a_init)
-				
-				if code == 'ph4':
 
-					association_code = ph4(converter_gravity)
+				parent_code = Hermite(converter_gravity)
 
-				if code == 'Hermite':
+				parent_code.particles.add_particles(stars_and_planets)
+				parent_code.commit_particles()
 
-					association_code = Hermite(converter_gravity)
-
-				if code == 'BHTree':
-	
-					association_code = BHTree(converter_gravity)	
-
-				association_code.particles.add_particles(stars_and_planets)
-				association_code.commit_particles()
-
-				if back_bool == False:
-
-					gravity = association_code
-
-				if back_bool == True:
-
-					gravity = bridge.Bridge(use_threading=False)
-					galaxy_code = to_amuse(MWPotential2014, t=0.0, tgalpy=0.0, reverse=False, ro=None, vo=None)
-					gravity.add_system(association_code, (galaxy_code,))
+				gravity = bridge.Bridge(use_threading=False)
+				galaxy_code = to_amuse(MWPotential2014, t=0.0, tgalpy=0.0, reverse=False, ro=None, vo=None)
+				gravity.add_system(association_code, (galaxy_code,))
 
 				gravity_to_framework = gravity.particles.new_channel_to(stars_and_planets)
 				gravity.timestep = dt_tdyn_ratio * t_dyn
@@ -216,22 +194,7 @@ def simulation(Nstars, Nclumps):#, t_end, dt, time_reversal):
 				#hydro.stop()
 				'''
 
-			ax.plot(time_ratios, np.abs(deltaE_values), label=code)
-			gravity.stop()
-			
-		ax.legend(loc='upper left', fontsize=8)
-		ax.set_xlabel(r'$\Delta t / t_{\rm dyn}$', fontsize=12)
-		ax.set_ylabel(r'$|\Delta E| / E_{\rm init}$', fontsize=12)
-		ax.set_xscale('log')
-		ax.set_yscale('log')	
-		ax.set_title('MW: %s'%(back_bool), fontsize=12)
-
-	plt.tight_layout()
-	plt.savefig('energy_conservation.png')
-
 	return 1
-
-#extra stuff
 
 '''
 external_bodies = stars_and_planets
@@ -266,47 +229,4 @@ combined.add_system(hydro, (gravity,))
 
 sim_times_unitless = np.arange(0, tEnd.value_in(units.yr), dt.value_in(units.yr))
 sim_times = [ t|units.yr for t in sim_times_unitless ]
-'''
-
-'''
-for i, t in enumerate(sim_times):
-
-if i%10 == 0:
-
-print('simulation time: %.02f yr'%(t.value_in(units.yr)))
-print('wall time: %.02f minutes'%((time.time()-t0)/60.))
-print('')
-
-xvals = gravity.particles.x.value_in(units.AU)
-yvals = gravity.particles.y.value_in(units.AU)
-
-xvals_gas = xvals[:len(gas)]
-yvals_gas = yvals[:len(gas)]
-
-xvals_stars_and_planets = xvals[len(gas):]
-yvals_stars_and_planets = yvals[len(gas):]
-
-xy = np.vstack([xvals_gas, yvals_gas])
-colors_gauss = gaussian_kde(xy)(xy)
-
-plt.figure()
-plt.gca().set_aspect('equal')
-plt.scatter(xvals_gas, yvals_gas, s=10, marker='.', c=colors_gauss, cmap=cm, linewidths=0, label='Protoplanetary Disk')
-plt.scatter(xvals_stars_and_planets, yvals_stars_and_planets, s=16, marker='*', c='k', label=r'Star ($M=M_{\odot}$)')
-plt.xlim(-120., 120.)
-plt.ylim(-120., 120.)
-plt.xlabel(r'$x$ (AU)', fontsize=12)
-plt.ylabel(r'$y$ (AU)', fontsize=12)
-plt.annotate(r'$t_{\mathrm{sim}} = %.02f$ yr'%(t.value_in(units.yr)), xy=(0.05, 0.95), xycoords='axes fraction', fontsize=8)
-plt.annotate(r'$M_{\mathrm{disk}} = %.02f M_{\odot}$'%(gas.mass.sum().value_in(units.MSun)), xy=(0.05, 0.9), xycoords='axes fraction', fontsize=8)
-plt.legend(loc='lower right', fontsize=8)
-plt.title('Young Protoplanetary Disk, Gravity + Hydrodynamics', fontsize=10)
-plt.tight_layout()
-plt.savefig('ppdisk_w_nothing_%s.png'%(str(i).rjust(5, '0')))
-plt.close()
-
-combined.evolve_model(t)
-ch_gravity_to_gas.copy()
-ch_gravity_to_stars_and_planets.copy()
-ch_hydro_to_gas.copy()
 '''

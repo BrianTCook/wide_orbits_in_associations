@@ -16,6 +16,7 @@ import math
 
 import numpy as np
 from scipy.stats import gaussian_kde
+from scipy.special import hyp2f1
 
 import matplotlib
 matplotlib.use('agg')
@@ -33,71 +34,17 @@ def find_nearest_index(value, array):
 
 	return idx
 
-def EFF(r, a, gamma):
-        
-        return (1 + (r/a)**2.)**(-gamma/2.)
-
-def HR_diagram_info(masses):
-
-	lvals = []
-	temps = []
-
-	#a, b are coefficients for the mass-luminosity relation
-	for mass in masses:
-
-		if mass <= 0.45|units.MSun :
-
-			a, b = 2.028, -0.976
-
-		if mass > 0.45|units.MSun and mass <= 0.72|units.MSun :
-
-			a, b = 4.572, -0.102
-
-		if mass > 0.72|units.MSun and mass <= 1.05|units.MSun :
-
-			a, b = 5.743, -0.007
-
-		if mass > 1.05|units.MSun and mass <= 2.4|units.MSun :
-
-			a, b = 4.329, 0.01
-
-		if mass > 2.4|units.MSun and mass <= 7.|units.MSun :
-
-			a, b = 3.967, 0.093
-
-		if mass > 7.|units.MSun and mass <= 31.|units.MSun :
-
-			a, b = 2.865, 1.105
-		
-		lum = 10**(a * np.log10(mass.value_in(units.MSun)) + b) #LSun
-
-		if mass > 1.5|units.MSun:
-
-			teff = 10**(-0.17*np.log10(mass.value_in(units.MSun))**2. + 0.888*np.log10(mass.value_in(units.MSun)) + 3.671)
-
-		if mass <= 1.5|units.MSun:
-
-			radius = (0.438*(mass.value_in(units.MSun))**2. + 0.479*mass.value_in(units.MSun) + 0.075)|units.RSun
-			
-			lum_units = lum|units.LSun
-
-			sigma = 5.67e-8 | units.J * (units.s)**(-1.) * (units.m)**(-2.) * (units.K)**(-4.)
-
-			teff = (lum_units / (4*np.pi*radius**2. * sigma))**(1/4.)
-			teff = (teff.value_in(units.K))
-
-		lvals.append(lum) #LSun
-		temps.append(teff) #Kelvin
-
-	return lvals, temps
-
-def enclosed_number(Nstars, r, a, gamma):
+def enclosed_mass(mass_association, r, a, gamma):
     
         #normalizing factor has to be 
+        eps_m = np.finfo(float).eps #machine precision
+        rho_0 = 3 * mass_association / ( 4 * np.pi * (eps_m**(-2./gamma) - 1)**(1.5) )
+        
+        mass_enc = (4*np.pi / 3.) * rho_0 * r**(3.) * hyp2f1(3/2., (gamma+1.)/2., 5/2., -(r/a)**2.)
+        
+        return mass_enc #no units, although we will need in terms of MSun
     
-        return Nstars * ( 1 - (1 + (r/a)**2)**(-gamma/2.+1) )
-    
-def xyz_coords(Nstars, Nclumps, a, gamma):
+def xyz_coords(mass_association, Nclumps, a, gamma):
 
 	xvals, yvals, zvals = [], [], []
 
@@ -110,21 +57,19 @@ def xyz_coords(Nstars, Nclumps, a, gamma):
 
 	eps_x, eps_y, eps_z = 0.1, 0.1, 0.1 #parsecs, for perturbation purposes
 
-	cdf = [ math.ceil(enclosed_number(Nstars, bin_centers[i], a, gamma)) for i in range(Nbins) ]
+	cdf = [ enclosed_mass(mass_association, r, a, gamma) for i in range(Nbins) ]
 
 	allowances = [ 0 for i in range(Nbins) ]
 
 	for i in range(Nbins):
 
-		allowances[i] = int(cdf[i] - np.sum(allowances[:i]))	
+		allowances[i] = int(cdf[i] - np.sum(allowances[:i]))	 #mass per slice allowed
 
-	bin_populations =  [ 0 for i in range(Nbins) ]
-
-	Nsystems = Nstars - Nstars_in_clumps + Nclumps
+	bin_masses =  [ 0. for i in range(Nbins) ]
 
 	clump_flag = 0
 
-	while len(xvals) < Nsystems:
+	while np.sum(bin_masses) < mass_association:
 
 		rval_proposed = 1.5 * a * np.random.rand() #pc
 
@@ -139,9 +84,10 @@ def xyz_coords(Nstars, Nclumps, a, gamma):
 
 			new_members = 1
 
-		new_bin_population = bin_populations[idx_bin] + new_members
+        new_member_masses = new_kroupa_mass_distribution(new_members, 17.5|units.MSun)
+		new_bin_mass = bin_masses[idx_bin] + new_member_masses.sum().value_in(units.MSun)
 
-		if new_bin_population < 1.05 * allowances[idx_bin]:
+		if new_bin_pmass < 1.05 * allowances[idx_bin]:
 
 			if clump_flag < Nclumps:
 				clump_flag += 1
@@ -164,14 +110,16 @@ def xyz_coords(Nstars, Nclumps, a, gamma):
 			xvals.append(xvals_new)
 			yvals.append(yvals_new)
 			zvals.append(zvals_new)
+            star_masses.append(new_member_masses)
 
-			bin_populations[idx_bin] = new_bin_population
+			bin_masses[idx_bin] = new_bin_mass
 
 	xvals = [ j for i in xvals for j in i ]
 	yvals = [ j for i in yvals for j in i ]
 	zvals = [ j for i in zvals for j in i ]
+    star_masses = [ j for i in star_masses for j in i ]
 
-	return xvals, yvals, zvals
+	return xvals, yvals, zvals, star_masses
     
     
 def uvw_coords(Nstars, xs, ys, zs, sigma_squared_max, a):
@@ -199,21 +147,14 @@ def LCC_maker(Nstars, Nclumps, time_reversal):
 	#LCC model using EFF formalism and measured velocity dispersions
 	a, gamma, sigma_squared_max = 50.1, 15.2, 2.15
 
-	xs, ys, zs = xyz_coords(Nstars, Nclumps, a, gamma)
+	xs, ys, zs, masses = xyz_coords(Nstars, Nclumps, a, gamma)
 	us, vs, ws = uvw_coords(Nstars, xs, ys, zs, sigma_squared_max, a)
 
 	#Kroupa distribution, biggest stars are A-type stars
-	masses = np.loadtxt('/home/brian/Desktop/wide_orbits_in_associations/data/LCC_masses.txt')
-
-	#new_kroupa_mass_distribution(Nstars, 31.|units.MSun)
+	#masses = np.loadtxt('/home/brian/Desktop/wide_orbits_in_associations/data/LCC_masses.txt')
 
 	masses = [ m|units.MSun for m in masses ]
-	temps, lums = HR_diagram_info(masses)
-
-	#np.savetxt('star_masses.txt', masses.value_in(units.MSun))
-	#np.savetxt('star_temperatures.txt', temps)
-	#np.savetxt('star_luminosities.txt', lums)
-
+    
 	#give each star appropriate phase space coordinates, mass
 
 	#LCC coordinates in solar frame
@@ -240,7 +181,5 @@ def LCC_maker(Nstars, Nclumps, time_reversal):
 		star.vz = time_arrow * ( (ws[i] | units.kms) + W0 + WMW )
 
 		star.mass = masses[i]
-		star.luminosity = lums[i]
-		star.temperature = temps[i]
 
 	return stars
