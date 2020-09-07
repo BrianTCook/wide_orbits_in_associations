@@ -34,11 +34,13 @@ def find_nearest_index(value, array):
 
 	return idx
 
-def enclosed_mass(mass_association, r, a, gamma):
+def EFF_values(mass_association, r, a, gamma):
     
         #normalizing factor has to be 
         eps_m = np.finfo(float).eps #machine precision
-        rho_0 = 3 * mass_association / ( 4 * np.pi * (eps_m**(-2./gamma) - 1)**(1.5) )
+        
+        r_max = a * np.sqrt(eps_m**(-2./gamma) - 1)
+        rho_0 = 3 * mass_association / ( 4 * np.pi * r_max**3. )
         
         mass_enc = (4*np.pi / 3.) * rho_0 * r**(3.) * hyp2f1(3/2., (gamma+1.)/2., 5/2., -(r/a)**2.)
         
@@ -51,8 +53,13 @@ def xyz_coords(mass_association, Nclumps, a, gamma):
 	clump_populations = [ math.ceil(40.*np.random.random() + 10.) for i in range(Nclumps) ]
 	Nstars_in_clumps = np.sum(clump_populations)
 
-	Nbins = 50
-	bin_edges = np.linspace(0., 1.5*a, Nbins+1) #edges of bins in parsecs
+	Nbins = 500
+    
+    eps_m = np.finfo(float).eps #machine precision
+    r_max = a * np.sqrt(eps_m**(-2./gamma) - 1)
+    print('r_max: %.03f pc'%(r_max))
+    
+	bin_edges = np.linspace(0., r_max, Nbins+1) #edges of bins in parsecs
 	bin_centers = [ 0.5*(bin_edges[i] + bin_edges[i+1]) for i in range(Nbins) ]
 
 	eps_x, eps_y, eps_z = 0.1, 0.1, 0.1 #parsecs, for perturbation purposes
@@ -71,7 +78,7 @@ def xyz_coords(mass_association, Nclumps, a, gamma):
 
 	while np.sum(bin_masses) < mass_association:
 
-		rval_proposed = 1.5 * a * np.random.rand() #pc
+		rval_proposed = r_max * np.random.rand() #pc
 
 		idx_bin = find_nearest_index(rval_proposed, bin_centers)	
 
@@ -142,16 +149,16 @@ def uvw_coords(Nstars, xs, ys, zs, sigma_squared_max, a):
 
 def LCC_maker(Nstars, Nclumps, time_reversal):
     
-	stars = Particles(Nstars)
 		    
 	#LCC model using EFF formalism and measured velocity dispersions
 	a, gamma, sigma_squared_max = 50.1, 15.2, 2.15
 
+    #Kroupa distribution, biggest stars are A-type stars
 	xs, ys, zs, masses = xyz_coords(Nstars, Nclumps, a, gamma)
 	us, vs, ws = uvw_coords(Nstars, xs, ys, zs, sigma_squared_max, a)
 
-	#Kroupa distribution, biggest stars are A-type stars
-	#masses = np.loadtxt('/home/brian/Desktop/wide_orbits_in_associations/data/LCC_masses.txt')
+    Nstars = len(masses)
+    stars = Particles(Nstars)
 
 	masses = [ m|units.MSun for m in masses ]
     
