@@ -3,7 +3,7 @@ import time
 import os
 
 #Circumvent a problem with using too many threads on OpenMPI
-#os.environ['OMPI_MCA_rmaps_base_oversubscribe'] = 'yes'
+os.environ['OMPI_MCA_rmaps_base_oversubscribe'] = 'yes'
 
 import numpy as np
 from scipy.stats import gaussian_kde
@@ -49,18 +49,18 @@ def simulation(Nstars, Nclumps):#, t_end, dt, time_reversal):
 	a, gamma, eta = 50.1|units.parsec, 15.2, 9.1
 
 	time_reversal = True
-	time_ratios = [ 10**(i) for i in np.linspace(-3., -1., 10) ]
-	print(np.linspace(-3, -1, 10))
+	time_ratios = [ 10**(i) for i in np.linspace(-3., -1., 17) ]
+	print(np.linspace(-3., -1., 17))
 
-	codes = [ 'ph4', 'Hermite', 'Nbody6xx' ]
-	background_bools = [ True, False ]
+	codes = [ 'BHTree', 'ph4', 'Hermite' ]
+	background_bools = [ False ]
 
-	fig, axs = plt.subplots(ncols=2, figsize=(5,5))
+	fig, axs = plt.subplots(ncols=len(background_bools), figsize=(5,5))
 
 	for back_bool in background_bools:
 
-		if back_bool == False:
-			ax = axs[0]
+		if back_bool == False and len(background_bools) == 1:
+			ax = axs#[0]
 		if back_bool == True:
 			ax = axs[1]
 
@@ -104,10 +104,9 @@ def simulation(Nstars, Nclumps):#, t_end, dt, time_reversal):
 
 					association_code = Hermite(converter_gravity)
 
-				if code == 'Nbody6xx':
+				if code == 'BHTree':
 	
-					association_code = Nbody6xx(redirection='none', converter=converter_gravity)
-					association_code.initialize_code()	
+					association_code = BHTree(converter_gravity)	
 
 				association_code.particles.add_particles(stars_and_planets)
 				association_code.commit_particles()
@@ -127,7 +126,9 @@ def simulation(Nstars, Nclumps):#, t_end, dt, time_reversal):
 
 				energy_init = gravity.particles.potential_energy() + gravity.particles.kinetic_energy()
 
-				gravity.evolve_model(t_dyn)
+				t_final = 16.|units.Myr
+
+				gravity.evolve_model(t_final)
 
 				energy_final = gravity.particles.potential_energy() + gravity.particles.kinetic_energy()
 
@@ -215,7 +216,8 @@ def simulation(Nstars, Nclumps):#, t_end, dt, time_reversal):
 				#hydro.stop()
 				'''
 
-			ax.plot(time_ratios, np.abs(deltaE_values), linewidth=1, label=code)
+			ax.plot(time_ratios, np.abs(deltaE_values), label=code)
+			gravity.stop()
 			
 		ax.legend(loc='upper left', fontsize=8)
 		ax.set_xlabel(r'$\Delta t / t_{\rm dyn}$', fontsize=12)
