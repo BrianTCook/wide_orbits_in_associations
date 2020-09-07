@@ -52,22 +52,6 @@ def simulation(Nstars, Nclumps):#, t_end, dt, time_reversal):
 	time_ratios = [ 10**(i) for i in np.linspace(-3., -1., 17) ]
 	print(np.linspace(-3., -1., 17))
 
-	parent_code = Hermite
-
-	fig, axs = plt.subplots(ncols=len(background_bools), figsize=(5,5))
-
-	for back_bool in background_bools:
-
-		for code in codes:
-
-			deltaE_values = []
-
-			for k, dt_tdyn_ratio in enumerate(time_ratios):
-
-				print('back_bool: ', back_bool)
-				print('code: ', code)
-				print('dt_tdyn_ratio: ', dt_tdyn_ratio)
-
 				stars_and_planets = LCC_maker(Nstars, Nclumps, time_reversal)
 				masses = stars_and_planets.mass.value_in(units.MSun)
 
