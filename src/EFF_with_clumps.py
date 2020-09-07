@@ -61,7 +61,7 @@ def r_max_finder(mass_association, a, gamma):
             
             u_max = 0.5*(u_min + u_max)
             
-    return 0.5*(u_min + u_max)
+    return 0.5*(u_min + u_max) * a.value_in(units.parsec)
 
 def enclosed_mass(mass_association, r, a, gamma, r_max):
     
