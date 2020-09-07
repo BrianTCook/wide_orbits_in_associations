@@ -36,32 +36,41 @@ def find_nearest_index(value, array):
 
 def r_max_finder(mass_association, a, gamma):
     
-    #normalizing factor has to be 
+	#normalizing factor has to be 
 	min_star_mass = np.amin(new_kroupa_mass_distribution(1000, 17.5|units.MSun).value_in(units.MSun))
 
-    delta_r = 1.|units.parsec
+	delta_r = 1. #width of bins in parsecs
 
-    matching_value = 1/3. * (a/delta_r) * min_star_mass / M_assoc
-    
-    def f(u):
-        
-        return 1/u * (1+u**(2.))**(gamma/2.)
-    
-    u_min, u_max = 1e-3, 20.
-    
-    while np.abs(u_max - u_min) < 1e-12:
-        
-        f1, f2 = f(u_min), f(u_max)
-        
-        if np.abs(f1 - matching_value) < np.abs(f2-matching_value):
-            
-            u_min = 0.5*(u_min + u_max)
-            
-        else:
-            
-            u_max = 0.5*(u_min + u_max)
-            
-    return 0.5*(u_min + u_max) * a.value_in(units.parsec)
+	matching_value = 1/3. * (a/delta_r) * min_star_mass / mass_association
+
+	print('matching value: ', matching_value)
+
+	def f(u):
+
+		return 1/u * (1+u**(2.))**(-gamma/2.)
+
+	u_min, u_max = 1e-3, 5.
+	finding_flag = 0
+
+	while finding_flag == 0:
+
+		f1, f2 = f(u_min), f(u_max)
+
+		delta_1, delta_2 = f1-matching_value, f2-matching_value
+
+		if np.abs(delta_1) > np.abs(delta_2) and delta_1 * delta_2 < 0.:
+
+			u_min += 0.5*(u_min + u_max)
+
+		if np.abs(delta_1) > np.abs(delta_2) and delta_1 * delta_2 < 0.:
+
+			u_max -= 0.5*(u_min + u_max)
+
+		if u_max - u_min < 1e-4 or delta_1 * delta_2 >= 0.:
+
+			finding_flag = 1
+	    
+	return 0.5*(u_min + u_max) * a
 
 def enclosed_mass(mass_association, r, a, gamma, r_max):
     
@@ -82,8 +91,14 @@ def xyz_coords(mass_association, Nclumps, a, gamma):
 	r_max = r_max_finder(mass_association, a, gamma)
 	print('r_max: %.03f pc'%(r_max))
     
-	bin_edges = np.linspace(0., r_max, Nbins+1) #edges of bins in parsecs
+	delta_r = 1. #width of bins in parsecs
+
+	bin_edges = np.arange(0., r_max, delta_r) #edges of bins in parsecs
+	Nbins = len(bin_edges) - 1
+
 	bin_centers = [ 0.5*(bin_edges[i] + bin_edges[i+1]) for i in range(Nbins) ]
+
+	print(bin_centers)
 
 	eps_x, eps_y, eps_z = 0.1, 0.1, 0.1 #parsecs, for perturbation purposes
 
