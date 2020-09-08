@@ -39,42 +39,37 @@ def r_max_finder(mass_association, a, gamma):
 	#normalizing factor has to be 
 	min_star_mass = np.amin(new_kroupa_mass_distribution(1000, 17.5|units.MSun).value_in(units.MSun))
 
-	delta_r = 1. #width of bins in parsecs
+	delta_r = 0.5 #width of bins in parsecs
 
 	matching_value = 1/3. * (a/delta_r) * min_star_mass / mass_association
 
-	print('matching value: ', matching_value)
-
 	def f(u):
 
-		return 1/u * (1+u**(2.))**(-gamma/2.)
+		return 1./u * (1+u**(2.))**(-gamma/2.) - matching_value
 
 	u_min, u_max = 1e-3, 5.
-	finding_flag = 0
+	delta = u_max - u_min
 
-	while finding_flag == 0:
+	while True:
 
-		f1, f2 = f(u_min), f(u_max)
+		if f(u_min + delta/2.) * f(u_max) < 0.:
 
-		delta_1, delta_2 = f1-matching_value, f2-matching_value
+			u_min += delta/2.
 
-		if np.abs(delta_1) > np.abs(delta_2) and delta_1 * delta_2 < 0.:
+		if f(u_min) * f(u_max - delta/2.) < 0.:
 
-			u_min += 0.5*(u_min + u_max)
+			u_max -= delta/2.
 
-		if np.abs(delta_1) > np.abs(delta_2) and delta_1 * delta_2 < 0.:
+		delta = u_max - u_min
 
-			u_max -= 0.5*(u_min + u_max)
+		if delta < 1e-6:
 
-		if u_max - u_min < 1e-4 or delta_1 * delta_2 >= 0.:
-
-			finding_flag = 1
-	    
-	return 0.5*(u_min + u_max) * a
+			return 0.5*(u_min + u_max) * a
 
 def enclosed_mass(mass_association, r, a, gamma, r_max):
     
-	rho_0 = 3 * mass_association / ( 4 * np.pi * r_max**3. ) #solar masses per parsec
+	rho_0 = 3 * mass_association / ( 4 * np.pi * r_max**3. * hyp2f1(3/2., (gamma+1.)/2., 5/2., -(r_max/a)**2.)) #solar masses per parsec
+
 	mass_enc = (4*np.pi / 3.) * rho_0 * r**(3.) * hyp2f1(3/2., (gamma+1.)/2., 5/2., -(r/a)**2.) #solar masses
 
 	return mass_enc #no units, although we will need in terms of MSun
@@ -85,42 +80,33 @@ def xyz_coords(mass_association, Nclumps, a, gamma):
 
 	clump_populations = [ math.ceil(40.*np.random.random() + 10.) for i in range(Nclumps) ]
 	Nstars_in_clumps = np.sum(clump_populations)
-
-	Nbins = 500
     
 	r_max = r_max_finder(mass_association, a, gamma)
 	print('r_max: %.03f pc'%(r_max))
     
-	delta_r = 1. #width of bins in parsecs
+	delta_r = 0.5 #width of bins in parsecs
 
 	bin_edges = np.arange(0., r_max, delta_r) #edges of bins in parsecs
 	Nbins = len(bin_edges) - 1
 
 	bin_centers = [ 0.5*(bin_edges[i] + bin_edges[i+1]) for i in range(Nbins) ]
 
-	print(bin_centers)
-
 	eps_x, eps_y, eps_z = 0.1, 0.1, 0.1 #parsecs, for perturbation purposes
 
 	cdf = [ enclosed_mass(mass_association, r, a, gamma, r_max) for r in bin_centers ]
 
-	print('cdf all bins: ', cdf)
-
-	allowances = [ 0 for i in range(Nbins) ]
+	allowances = [ 0. for i in range(Nbins) ]
 
 	for i in range(Nbins):
 
-		allowances[i] = int(cdf[i] - np.sum(allowances[:i]))	 #mass per slice allowed
-
-	print('allowances in first 50 bins: ', allowances[:50])
-
+		allowances[i] = cdf[i] - np.sum(allowances[:i])	 #mass per slice allowed
 	bin_masses =  [ 0. for i in range(Nbins) ]
+	star_masses = []
 
 	clump_flag = 0
 
 	while np.sum(bin_masses) < mass_association:
 
-		#print('assigned masses: %.03f MSun'%(np.sum(bin_masses)))
 		rval_proposed = r_max * np.random.rand() #pc
 
 		idx_bin = find_nearest_index(rval_proposed, bin_centers)	
@@ -179,7 +165,7 @@ def uvw_coords(xs, ys, zs, sigma_squared_max, a):
 
 	speeds = [ np.random.normal(loc=0., scale=std) for std in stdevs ] #in km/s
 
-	Nstars = len(masses)
+	Nstars = len(rs)
 
 	random_directions = [ np.random.rand(3,) for i in range(Nstars) ]
 	normalized_directions = [ direc/np.linalg.norm(direc) for direc in random_directions ]
@@ -204,8 +190,6 @@ def LCC_maker(mass_association, Nclumps, time_reversal):
 
 	Nstars = len(masses)
 	stars = Particles(Nstars)
-
-	masses = [ m|units.MSun for m in masses ]
     
 	#give each star appropriate phase space coordinates, mass
 

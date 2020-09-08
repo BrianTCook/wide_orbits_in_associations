@@ -78,15 +78,17 @@ def simulation(mass_association, Nclumps, time_reversal):
 
 	gravity = bridge.Bridge(use_threading=False)
 	galaxy_code = to_amuse(MWPotential2014, t=0.0, tgalpy=0.0, reverse=False, ro=None, vo=None)
-	gravity.add_system(association_code, (galaxy_code,))
+	gravity.add_system(parent_code, (galaxy_code,))
 
 	gravity_to_framework = gravity.particles.new_channel_to(stars_and_planets)
 	gravity.timestep = dt_parent
 
 	t_backward = 16.|units.Myr
-	t_forward = 54.|units.Myr
+	t_forward = 48.|units.Myr
 
 	gravity.evolve_model(t_backward)
+
+	filename = 'temp_for_amuse'
 
 	io.write_set_to_file(gravity.particles, filename, 'csv',
 						 attribute_types = (units.MSun, units.parsec, units.parsec, units.parsec, units.kms, units.kms, units.kms),
