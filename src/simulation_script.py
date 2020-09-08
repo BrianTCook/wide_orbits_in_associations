@@ -88,7 +88,8 @@ def simulation(mass_association, Nclumps, time_reversal):
 
 	gravity.evolve_model(t_backward)
 
-	filename = 'temp_for_amuse'
+	filename = 'temp_for_amuse.csv'
+	attributes = ('mass', 'x', 'y', 'z', 'vx', 'vy', 'vz')
 
 	io.write_set_to_file(gravity.particles, filename, 'csv',
 						 attribute_types = (units.MSun, units.parsec, units.parsec, units.parsec, units.kms, units.kms, units.kms),
