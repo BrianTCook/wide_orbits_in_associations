@@ -42,12 +42,12 @@ def simulation(mass_association, Nclumps, time_reversal):
 	galaxy_code = to_amuse(MWPotential2014, t=0.0, tgalpy=0.0, reverse=False, ro=None, vo=None)
     
 	code_name = 'not nemesis'
-	stars, gravity, stellar = solver_codes_initial_setup(code_name, galaxy_code)
+	stars_g, stars_s, gravity, stellar = solver_codes_initial_setup(code_name, galaxy_code) #stars for gravity, stars for stellar
 
-	channel_from_gravity_to_framework = gravity.particles.new_channel_to(stars)
-	channel_from_framework_to_gravity = stars.new_channel_to(gravity.particles)
+	channel_from_gravity_to_framework = gravity.particles.new_channel_to(stars_g)
+	channel_from_framework_to_gravity = stars_g.new_channel_to(gravity.particles)
 
-	channel_from_stellar_to_framework = stellar.particles.new_channel_to(stars)
+	channel_from_stellar_to_framework = stellar.particles.new_channel_to(stars_s)
 
 	'''
 	cluster_mass = stars.mass.sum()
@@ -76,12 +76,16 @@ def simulation(mass_association, Nclumps, time_reversal):
 	Nsavetimes = len(sim_times)
 	Ntotal = len(gravity.particles)
     
-	all_data = np.zeros((Nsavetimes+1, Ntotal, 7))
+	grav_data = np.zeros((Nsavetimes+1, Ntotal, 6))
+	stellar_data = np.zeros((Nsavetimes+1, Ntotal, 3))
 	energy_data = np.zeros(Nsavetimes+1)
 
 	#for saving in write_set_to_file
-	filename = 'data_temp.csv'
-	attributes = ('mass', 'x', 'y', 'z', 'vx', 'vy', 'vz')
+	filename_grav = 'data_temp_grav.csv'
+	filename_stellar = 'data_temp_stellar.csv'
+
+	attributes_grav = ('x', 'y', 'z', 'vx', 'vy', 'vz')
+	attributes_stellar = ('mass', 'luminosity', 'temperature')
 
 	print('len(sim_times) is', len(sim_times))
 	saving_flag = int(math.floor(len(sim_times)/Nsavetimes))
@@ -104,26 +108,41 @@ def simulation(mass_association, Nclumps, time_reversal):
 		energy = gravity.particles.potential_energy() + gravity.particles.kinetic_energy()
 		deltaE = energy/energy_init - 1.
 
-		print_diagnostics(t, t0, stars, energy, deltaE)
+		print_diagnostics(t, t0, stars_g, energy, deltaE)
 
-		energy_data[j_like_index] = deltaE
+		energy_data[j] = deltaE
 
-		j_like_index += 1
-		io.write_set_to_file(gravity.particles, filename, 'csv',
-				 attribute_types = (units.MSun, units.parsec, units.parsec, units.parsec, units.kms, units.kms, units.kms),
-				 attribute_names = attributes)
+		#gravity stuff
 
-		data_t = pd.read_csv(filename, names=list(attributes))
-		data_t = data_t.drop([0, 1, 2]) #removes labels units, and unit names
+		io.write_set_to_file(gravity.particles, filename_grav, 'csv',
+				 attribute_types = (units.parsec, units.parsec, units.parsec, units.kms, units.kms, units.kms),
+				 attribute_names = attributes_grav)
 
-		data_t = data_t.astype(float) #strings to floats
+		data_t_grav = pd.read_csv(filename_grav, names=list(attributes_grav))
+		data_t_grav = data_t_grav.drop([0, 1, 2]) #removes labels units, and unit names
 
-		all_data[j_like_index, :len(data_t.index), :] = data_t.values
-		np.savetxt('phasespace_%s_frame_%s_LCC.ascii'%(forward_or_backward, str(j).rjust(5, '0')), data_t.values)
+		data_t_grav = data_t_grav.astype(float) #strings to floats
 
-		snapshot_times.append(t.value_in(units.Myr))
+		grav_data[j, :len(data_t_grav.index), :] = data_t_grav.values
+		np.savetxt('phasespace_%s_frame_%s_LCC.ascii'%(forward_or_backward, str(j).rjust(5, '0')), data_t_grav.values)
 
-		x_med, y_med, z_med = np.median(data_t['x'])/1000., np.median(data_t['y'])/1000., np.median(data_t['z'])/1000.
+		#stellar stuff
+
+		io.write_set_to_file(stellar.particles, filename_stellar, 'csv',
+						 attribute_types = (units.MSun, units.LSun, units.K),
+						 attribute_names = attributes_stellar)
+
+		data_t_stellar = pd.read_csv(filename_stellar, names=list(attributes_stellar))
+		data_t_stellar = data_t_stellar.drop([0, 1, 2]) #removes labels units, and unit names
+
+		data_t_stellar = data_t_stellar.astype(float) #strings to floats
+
+		stellar_data[j, :len(data_t_stellar.index), :] = data_t_stellar.values
+		np.savetxt('stellar_evolution_%s_frame_%s_LCC.ascii'%(forward_or_backward, str(j).rjust(5, '0')), data_t_stellar.values)
+
+		x_med, y_med, z_med = np.median(data_t_grav['x'])/1000., np.median(data_t_grav['y'])/1000., np.median(data_t_grav['z'])/1000.
+
+		#compute MW mass at time t
 
 		Mgal = 0. #in solar masses
 		Rgal, zgal = np.sqrt(x_med**2. + y_med**2.), z_med #in kpc
@@ -141,7 +160,7 @@ def simulation(mass_association, Nclumps, time_reversal):
 		channel_from_framework_to_gravity.copy()
 		gravity.evolve_model(t)
 		channel_from_gravity_to_framework.copy()
-        
+
 	np.savetxt('snapshot_times_%s.txt'%(forward_or_backward), sim_times_unitless)
 	np.savetxt('snapshot_galaxy_masses_%s.txt'%(forward_or_backward), snapshot_galaxy_masses)
 	np.savetxt('snapshot_deltaEs_%s.txt'%(forward_or_backward), energy_data)

@@ -104,4 +104,4 @@ def solver_codes_initial_setup(code_name, galaxy_code):
 
 		gravity.add_system(nemesis, (galaxy_code,))
 
-	return gravity.particles, gravity, stellar
+	return gravity.particles, stellar.particles, gravity, stellar
