@@ -43,7 +43,13 @@ def simulation(mass_association, Nclumps, time_reversal):
     
 	code_name = 'not nemesis'
 	stars_g, stars_s, gravity, stellar = solver_codes_initial_setup(code_name, galaxy_code) #stars for gravity, stars for stellar
-
+    
+    #backward evolved need to flip the sign of each velocity
+    for star in stars_g:
+        star.vx *= -1.
+        star.vy *= -1.
+        star.vz *- -1.
+    
 	channel_from_gravity_to_framework = gravity.particles.new_channel_to(stars_g)
 	channel_from_framework_to_gravity = stars_g.new_channel_to(gravity.particles)
 
