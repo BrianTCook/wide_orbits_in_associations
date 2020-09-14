@@ -65,7 +65,7 @@ def solver_codes_initial_setup(code_name, galaxy_code):
 	converter_parent = nbody_system.nbody_to_si(Mgal|units.MSun, R_GC|units.kpc)
 	converter_sub = nbody_system.nbody_to_si(np.median(stars.mass.value_in(units.MSun))|units.MSun, 1.|units.parsec) #masses list is in solar mass units
 
-	gravity = bridge.Bridge(use_threading=False)
+	gravity = herm #bridge.Bridge(use_threading=False)
 
 	if code_name != 'nemesis':
 
@@ -75,7 +75,7 @@ def solver_codes_initial_setup(code_name, galaxy_code):
 		#bridges each cluster with the bulge, not the other way around though
 		herm = Hermite(converter_parent)
 		herm.particles.add_particles(stars)
-		gravity.add_system(herm, (galaxy_code,))  
+		#gravity.add_system(herm, (galaxy_code,))  
 	    
 	if code_name == 'nemesis':
 
