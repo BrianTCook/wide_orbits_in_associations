@@ -47,13 +47,13 @@ def simulation(mass_association, Nclumps, time_reversal):
 	if time_reversal == False:
 
 		forward_or_backward = 'forward'
-		t_end = 64.|units.Myr, 0.064|units.Myr
+		t_end, dt = 64.|units.Myr, 0.064|units.Myr
 
 		sim_times_unitless = np.arange(0., t_end.value_in(units.Myr), dt.value_in(units.Myr))
 		sim_times = [ t|units.Myr for t in sim_times_unitless ]
 
 		#for 3D numpy array storage
-		Nsavetimes = len(sim_times)
+		Nsavetimes = 50
 		Ntotal = len(gravity.particles)
 	    
 		grav_data = np.zeros((Nsavetimes+1, Ntotal, 6))
@@ -85,54 +85,58 @@ def simulation(mass_association, Nclumps, time_reversal):
 
 		for j, t in enumerate(sim_times):
 
-			energy = gravity.particles.potential_energy() + gravity.particles.kinetic_energy()
-			deltaE = energy/energy_init - 1.
+			if j%saving_flag == 0:
 
-			print_diagnostics(t, t0, stars_g, energy, deltaE)
+				energy = gravity.particles.potential_energy() + gravity.particles.kinetic_energy()
+				deltaE = energy/energy_init - 1.
 
-			energy_data[j] = deltaE
+				print_diagnostics(t, t0, stars_g, energy, deltaE)
 
-			#gravity stuff
+				energy_data[j] = deltaE
 
-			io.write_set_to_file(gravity.particles, filename_grav, 'csv',
-					 attribute_types = (units.parsec, units.parsec, units.parsec, units.kms, units.kms, units.kms),
-					 attribute_names = attributes_grav)
+				#gravity stuff
 
-			data_t_grav = pd.read_csv(filename_grav, names=list(attributes_grav))
-			data_t_grav = data_t_grav.drop([0, 1, 2]) #removes labels units, and unit names
+				io.write_set_to_file(gravity.particles, filename_grav, 'csv',
+						 attribute_types = (units.parsec, units.parsec, units.parsec, units.kms, units.kms, units.kms),
+						 attribute_names = attributes_grav)
 
-			data_t_grav = data_t_grav.astype(float) #strings to floats
+				data_t_grav = pd.read_csv(filename_grav, names=list(attributes_grav))
+				data_t_grav = data_t_grav.drop([0, 1, 2]) #removes labels units, and unit names
 
-			grav_data[j, :len(data_t_grav.index), :] = data_t_grav.values
-			np.savetxt('phasespace_%s_frame_%s_LCC.ascii'%(forward_or_backward, str(j).rjust(5, '0')), data_t_grav.values)
+				data_t_grav = data_t_grav.astype(float) #strings to floats
 
-			#stellar stuff
+				grav_data[j, :len(data_t_grav.index), :] = data_t_grav.values
+				np.savetxt('phasespace_%s_frame_%s_LCC.ascii'%(forward_or_backward, str(j).rjust(5, '0')), data_t_grav.values)
 
-			io.write_set_to_file(stellar.particles, filename_stellar, 'csv',
-							 attribute_types = (units.MSun, units.LSun, units.K),
-							 attribute_names = attributes_stellar)
+				#stellar stuff
 
-			data_t_stellar = pd.read_csv(filename_stellar, names=list(attributes_stellar))
-			data_t_stellar = data_t_stellar.drop([0, 1, 2]) #removes labels units, and unit names
+				io.write_set_to_file(stellar.particles, filename_stellar, 'csv',
+								 attribute_types = (units.MSun, units.LSun, units.K),
+								 attribute_names = attributes_stellar)
 
-			data_t_stellar = data_t_stellar.astype(float) #strings to floats
+				data_t_stellar = pd.read_csv(filename_stellar, names=list(attributes_stellar))
+				data_t_stellar = data_t_stellar.drop([0, 1, 2]) #removes labels units, and unit names
 
-			stellar_data[j, :len(data_t_stellar.index), :] = data_t_stellar.values
-			np.savetxt('stellar_evolution_%s_frame_%s_LCC.ascii'%(forward_or_backward, str(j).rjust(5, '0')), data_t_stellar.values)
+				data_t_stellar = data_t_stellar.astype(float) #strings to floats
 
-			x_med, y_med, z_med = np.median(data_t_grav['x'])/1000., np.median(data_t_grav['y'])/1000., np.median(data_t_grav['z'])/1000.
+				stellar_data[j, :len(data_t_stellar.index), :] = data_t_stellar.values
+				np.savetxt('stellar_evolution_%s_frame_%s_LCC.ascii'%(forward_or_backward, str(j).rjust(5, '0')), data_t_stellar.values)
 
-			#compute MW mass at time t
+				x_med, y_med, z_med = np.median(data_t_grav['x'])/1000., np.median(data_t_grav['y'])/1000., np.median(data_t_grav['z'])/1000.
 
-			Mgal = 0. #in solar masses
-			Rgal, zgal = np.sqrt(x_med**2. + y_med**2.), z_med #in kpc
-			R_GC = np.sqrt(Rgal**2. + zgal**2.) #in kpc
+				#compute MW mass at time t
 
-			for pot in MWPotential2014:
+				Mgal = 0. #in solar masses
+				Rgal, zgal = np.sqrt(x_med**2. + y_med**2.), z_med #in kpc
+				R_GC = np.sqrt(Rgal**2. + zgal**2.) #in kpc
 
-				Mgal += pot.mass(Rgal, zgal) * bovy_conversion.mass_in_msol(220., 8.)
+				for pot in MWPotential2014:
 
-			snapshot_galaxy_masses.append(Mgal) #in MSun
+					Mgal += pot.mass(Rgal, zgal) * bovy_conversion.mass_in_msol(220., 8.)
+
+				snapshot_galaxy_masses.append(Mgal) #in MSun
+			
+				j_like_index += 1
 
 			stellar.evolve_model(t)
 			channel_from_stellar_to_framework.copy()
@@ -160,29 +164,38 @@ def simulation(mass_association, Nclumps, time_reversal):
 
 		print('backward simulation is ready to start')
 
+		filename_init = 'LCC_phase_space_present_epoch.csv'
+		attributes_grav = ('mass', 'x', 'y', 'z', 'vx', 'vy', 'vz')
+		io.write_set_to_file(gravity.particles, filename_init, 'csv',
+							 attribute_types = (units.MSun, units.parsec, units.parsec, units.parsec, units.kms, units.kms, units.kms),
+							 attribute_names = attributes_grav)
+
 		channel_from_framework_to_gravity.copy()
 		gravity.evolve_model(t_end)
 		channel_from_gravity_to_framework.copy()
 
-		filename_backward = 'LCC_phase_space_ICs.csv'
-		attributes_grav = ('x', 'y', 'z', 'vx', 'vy', 'vz')
-
+		filename_backward = 'LCC_phase_space_backwards.csv'
 		io.write_set_to_file(gravity.particles, filename_backward, 'csv',
-					 attribute_types = (units.parsec, units.parsec, units.parsec, units.kms, units.kms, units.kms),
+					 attribute_types = (units.MSun, units.parsec, units.parsec, units.parsec, units.kms, units.kms, units.kms),
 					 attribute_names = attributes_grav)
 
 		gravity.stop()
 
-		df = pd.read_csv(filename_backward, names=list(attributes_grav))
-		df = df.drop([0, 1, 2]) #removes labels units, and unit names
-		df = df.astype(float) #strings to floats
+		df_ICs = pd.read_csv(filename_backward, names=list(attributes_grav))
+				
+		def flip_velocity(x):
 
-		phase_space_ICs = df.values
+			try:
+				return str(float(x) * -1.)
+	
+			#rows with labels/units/etc.
+			except:
+				return x
 
-		#flip velocities
-		for k in [3, 4, 5]:
-			phase_space_ICs[:, k] = -1. * phase_space_ICs[:,k]
+		df_ICs['vx'].apply(flip_velocity)
+		df_ICs['vy'].apply(flip_velocity)
+		df_ICs['vz'].apply(flip_velocity)
 
-		np.savetxt('LCC_phase_space_ICs.csv', phase_space_ICs)
+		df_ICs.to_csv('LCC_phase_space_ICs.csv', index=False)
 		
 	return 1

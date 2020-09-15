@@ -48,13 +48,9 @@ def solver_codes_initial_setup(code_name, galaxy_code, Nclumps, time_reversal):
 	'''
 
 	if time_reversal == False:
+
 		filename = '/home/brian/Desktop/wide_orbits_in_associations/data/LCC_phase_space_ICs.csv'
-		ahh = pd.read_csv(filename)
-
-		print(ahh)
-
 		stars = read_set_from_file(filename, "csv")
-		print(stars)
 
 	if time_reversal == True:
 		mass_association = 700. #|units.MSun
