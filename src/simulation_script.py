@@ -33,6 +33,18 @@ def print_diagnostics(sim_time, t0, simulation_bodies, E_dyn, dE_dyn):
 	print('dE_dyn: %.04e'%(dE_dyn))
 	print('------------')
 
+def flip_velocity(x):
+
+	try:
+
+		x = str(float(x) * -1.)
+
+	#rows with labels/units/etc.
+	except:
+		print('row with no numerical information')
+
+	return x
+
 def simulation(mass_association, Nclumps, time_reversal):
 
 	'''
@@ -64,7 +76,7 @@ def simulation(mass_association, Nclumps, time_reversal):
 		filename_grav = 'data_temp_grav.csv'
 		filename_stellar = 'data_temp_stellar.csv'
 
-		attributes_grav = ('x', 'y', 'z', 'vx', 'vy', 'vz')
+		attributes_grav = ('mass', 'x', 'y', 'z', 'vx', 'vy', 'vz')
 		attributes_stellar = ('mass', 'luminosity', 'temperature')
 
 		print('len(sim_times) is', len(sim_times))
@@ -181,17 +193,9 @@ def simulation(mass_association, Nclumps, time_reversal):
 
 		gravity.stop()
 
-		df_ICs = pd.read_csv(filename_backward, names=list(attributes_grav))
-				
-		def flip_velocity(x):
+		df_backwards = pd.read_csv(filename_backward, names=list(attributes_grav))
 
-			try:
-				return str(float(x) * -1.)
-	
-			#rows with labels/units/etc.
-			except:
-				return x
-
+		df_ICs = df_backwards
 		df_ICs['vx'].apply(flip_velocity)
 		df_ICs['vy'].apply(flip_velocity)
 		df_ICs['vz'].apply(flip_velocity)
