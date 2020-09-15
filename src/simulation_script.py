@@ -68,7 +68,7 @@ def simulation(mass_association, Nclumps, time_reversal):
 		Nsavetimes = 50
 		Ntotal = len(gravity.particles)
 	    
-		grav_data = np.zeros((Nsavetimes+1, Ntotal, 6))
+		grav_data = np.zeros((Nsavetimes+1, Ntotal, 7))
 		stellar_data = np.zeros((Nsavetimes+1, Ntotal, 3))
 		energy_data = np.zeros(Nsavetimes+1)
 
@@ -82,8 +82,7 @@ def simulation(mass_association, Nclumps, time_reversal):
 		print('len(sim_times) is', len(sim_times))
 		saving_flag = int(math.floor(len(sim_times)/Nsavetimes))
 
-		snapshot_times = []
-		snapshot_galaxy_masses = []
+		snapshot_galaxy_masses = [ 0. for i in range(Nsavetimes) ]
 		j_like_index = 0
 
 		t0 = time.time()
@@ -104,12 +103,12 @@ def simulation(mass_association, Nclumps, time_reversal):
 
 				print_diagnostics(t, t0, stars_g, energy, deltaE)
 
-				energy_data[j] = deltaE
+				energy_data[j_like_index] = deltaE
 
 				#gravity stuff
 
 				io.write_set_to_file(gravity.particles, filename_grav, 'csv',
-						 attribute_types = (units.parsec, units.parsec, units.parsec, units.kms, units.kms, units.kms),
+						 attribute_types = (units.MSun, units.parsec, units.parsec, units.parsec, units.kms, units.kms, units.kms),
 						 attribute_names = attributes_grav)
 
 				data_t_grav = pd.read_csv(filename_grav, names=list(attributes_grav))
@@ -117,7 +116,7 @@ def simulation(mass_association, Nclumps, time_reversal):
 
 				data_t_grav = data_t_grav.astype(float) #strings to floats
 
-				grav_data[j, :len(data_t_grav.index), :] = data_t_grav.values
+				grav_data[j_like_index, :len(data_t_grav.index), :] = data_t_grav.values
 				np.savetxt('phasespace_%s_frame_%s_LCC.ascii'%(forward_or_backward, str(j).rjust(5, '0')), data_t_grav.values)
 
 				#stellar stuff
@@ -131,7 +130,7 @@ def simulation(mass_association, Nclumps, time_reversal):
 
 				data_t_stellar = data_t_stellar.astype(float) #strings to floats
 
-				stellar_data[j, :len(data_t_stellar.index), :] = data_t_stellar.values
+				stellar_data[j_like_index, :len(data_t_stellar.index), :] = data_t_stellar.values
 				np.savetxt('stellar_evolution_%s_frame_%s_LCC.ascii'%(forward_or_backward, str(j).rjust(5, '0')), data_t_stellar.values)
 
 				x_med, y_med, z_med = np.median(data_t_grav['x'])/1000., np.median(data_t_grav['y'])/1000., np.median(data_t_grav['z'])/1000.
@@ -146,7 +145,7 @@ def simulation(mass_association, Nclumps, time_reversal):
 
 					Mgal += pot.mass(Rgal, zgal) * bovy_conversion.mass_in_msol(220., 8.)
 
-				snapshot_galaxy_masses.append(Mgal) #in MSun
+				snapshot_galaxy_masses[j_like_index] = Mgal #in MSun
 			
 				j_like_index += 1
 

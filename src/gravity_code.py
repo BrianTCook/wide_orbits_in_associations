@@ -52,6 +52,11 @@ def solver_codes_initial_setup(code_name, galaxy_code, Nclumps, time_reversal):
 		filename = '/home/brian/Desktop/wide_orbits_in_associations/data/LCC_phase_space_ICs.csv'
 		stars = read_set_from_file(filename, "csv")
 
+		#stored going the wrong way
+		stars.vx *= -1.
+		stars.vy *= -1.
+		stars.vz *= -1.
+
 	if time_reversal == True:
 		mass_association = 700. #|units.MSun
 		stars = LCC_maker(mass_association, Nclumps, time_reversal)

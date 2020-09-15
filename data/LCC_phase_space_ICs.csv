@@ -1,4 +1,3 @@
-mass,x,y,z,vx,vy,vz
 #mass,x,y,z,vx,vy,vz
 #(1.98892e+30 * system.get('S.I.').base('mass')),(3.08567758128e+16 * system.get('S.I.').base('length')),(3.08567758128e+16 * system.get('S.I.').base('length')),(3.08567758128e+16 * system.get('S.I.').base('length')),((1000.0 * system.get('S.I.').base('length')) * (system.get('S.I.').base('time')**-1)),((1000.0 * system.get('S.I.').base('length')) * (system.get('S.I.').base('time')**-1)),((1000.0 * system.get('S.I.').base('length')) * (system.get('S.I.').base('time')**-1))
 #MSun,parsec,parsec,parsec,kms,kms,kms
