@@ -1,4 +1,4 @@
-from __future__ import division, print_function
+ofrom __future__ import division, print_function
 import time
 import os
 
