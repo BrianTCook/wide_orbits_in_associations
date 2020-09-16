@@ -15,7 +15,7 @@ from simulation_script import simulation
 
 def main(mass_association, Nclumps):
 
-	simulation(mass_association, Nclumps, time_reversal=False)
+	simulation(mass_association, Nclumps, time_reversal=True)
 
 def new_option_parser():
 
