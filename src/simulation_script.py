@@ -61,15 +61,15 @@ def simulation(mass_association, Nclumps, time_reversal):
 		forward_or_backward = 'forward'
 		t_end, dt = 64.|units.Myr, 0.064|units.Myr
 
-		sim_times_unitless = np.arange(0., t_end.value_in(units.Myr), dt.value_in(units.Myr))
+		sim_times_unitless = np.arange(0., (t_end+dt).value_in(units.Myr), dt.value_in(units.Myr))
 		sim_times = [ t|units.Myr for t in sim_times_unitless ]
 
 		#for 3D numpy array storage
-		Nsavetimes = 50
+		Nsavetimes = 8
 		Ntotal = len(gravity.particles)
 	    
-		grav_data = np.zeros((Nsavetimes+1, Ntotal, 7))
-		stellar_data = np.zeros((Nsavetimes+1, Ntotal, 3))
+		grav_data = np.zeros((Nsavetimes, Ntotal, 7))
+		stellar_data = np.zeros((Nsavetimes, Ntotal, 3))
 		energy_data = np.zeros(Nsavetimes+1)
 
 		#for saving in write_set_to_file
@@ -81,8 +81,10 @@ def simulation(mass_association, Nclumps, time_reversal):
 
 		print('len(sim_times) is', len(sim_times))
 		saving_flag = int(math.floor(len(sim_times)/Nsavetimes))
+		print('saving_flag: %i'%(saving_flag))
 
 		snapshot_galaxy_masses = [ 0. for i in range(Nsavetimes) ]
+		snapshot_times = [ 0. for i in range(Nsavetimes) ]
 		j_like_index = 0
 
 		t0 = time.time()
@@ -97,6 +99,8 @@ def simulation(mass_association, Nclumps, time_reversal):
 		for j, t in enumerate(sim_times):
 
 			if j%saving_flag == 0:
+	
+				print('j = %i'%(j))
 
 				energy = gravity.particles.potential_energy() + gravity.particles.kinetic_energy()
 				deltaE = energy/energy_init - 1.
@@ -146,6 +150,7 @@ def simulation(mass_association, Nclumps, time_reversal):
 					Mgal += pot.mass(Rgal, zgal) * bovy_conversion.mass_in_msol(220., 8.)
 
 				snapshot_galaxy_masses[j_like_index] = Mgal #in MSun
+				snapshot_times[j_like_index] = t
 			
 				j_like_index += 1
 
@@ -156,7 +161,7 @@ def simulation(mass_association, Nclumps, time_reversal):
 			gravity.evolve_model(t)
 			channel_from_gravity_to_framework.copy()
 
-		np.savetxt('snapshot_times_%s.txt'%(forward_or_backward), sim_times_unitless)
+		np.savetxt('snapshot_times_%s.txt'%(forward_or_backward), snapshot_times)
 		np.savetxt('snapshot_galaxy_masses_%s.txt'%(forward_or_backward), snapshot_galaxy_masses)
 		np.savetxt('snapshot_deltaEs_%s.txt'%(forward_or_backward), energy_data)
 
