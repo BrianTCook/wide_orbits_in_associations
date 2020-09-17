@@ -27,7 +27,7 @@ def log_prior(theta):
     
     rho_0, a, gamma = theta
     
-    if rho_0 > 0. and a > 0. and gamma > 0. and a < 200. and gamma < 30.:
+    if rho_0 > 0. and rho_0 < 0.5 and a > 0. and a < 100. and gamma > 0. and gamma < 30.:
         
         return 0.
     
@@ -66,6 +66,9 @@ nll = lambda *args: -log_likelihood(*args)
 files = glob.glob('/Users/BrianTCook/Desktop/wide_orbits_in_associations/data/forward_in_time/phasespace_*_LCC.ascii')
 times = np.linspace(0., 64., 9)
 
+plt.rc('text', usetex=True)
+plt.rc('font', family='serif')
+
 for i, file in enumerate(files):
 
     print('time is: %.02f Myr'%(times[i]))
@@ -87,7 +90,7 @@ for i, file in enumerate(files):
     a_true, gamma_true = 50.1, 15.2 #from present epoch values
     rho_0_true = 3 * mass_association / ( 4 * np.pi * r_max**3. * hyp2f1(3/2., (gamma_true+1.)/2., 5/2., -(r_max/a_true)**2.)) #solar masses per parsec
     
-    Nbins = 50
+    Nbins = 20
     r_edges = np.linspace(0., r_max, Nbins+1) #edges
     r_centers = [ 0.5*(r_edges[i]+r_edges[i+1]) for i in range(Nbins) ] #centers
     delta_r = r_centers[1] - r_centers[0]
@@ -115,22 +118,13 @@ for i, file in enumerate(files):
     nwalkers, ndim = pos.shape
     
     sampler = emcee.EnsembleSampler(nwalkers, ndim, log_probability, args=(r, rho, rho_err))
-    sampler.run_mcmc(pos, 20000, progress=True)
-
-    '''
-    fig, axes = plt.subplots(3, figsize=(10, 7), sharex=True)
-    samples = sampler.get_chain()
-    labels = [r"$\rho_{0}$", r"$a$", r"$gamma$"]
-    for i in range(ndim):
-        ax = axes[i]
-        ax.plot(samples[:, :, i], "k", alpha=0.3)
-        ax.set_xlim(0, len(samples))
-        ax.set_ylabel(labels[i])
-        ax.yaxis.set_label_coords(-0.1, 0.5)
+    sampler.run_mcmc(pos, 50000, progress=True)
     
-    axes[-1].set_xlabel("step number")
-    '''
-    
-    flat_samples = sampler.get_chain(discard=1000, thin=15, flat=True) 
+    flat_samples = sampler.get_chain(discard=5000, flat=True) 
     np.savetxt('MCMC_parameters_%i.txt'%(i), flat_samples)
+    
+    labels = [ r'$\rho_{0} \hspace{2mm} [M_{\odot} \, {\rm pc}^{-3}]$', r'$a \hspace{2mm} [{\rm pc}]$', r'$\gamma$' ]
     fig = corner.corner(flat_samples, labels=labels, truths=[rho_0_true, a_true, gamma_true])
+    plt.suptitle(r'$\rho(r, t = %.0f \hspace{2mm} {\rm Myr}) \simeq \rho_{0}\left(1+(r/a)^{2}\right)^{-\gamma/2}$'%(times[i]), fontsize=18, x=0.6666, y=0.83333)
+    plt.subplots_adjust(top=0.96)
+    plt.savefig('MCMC_histograms_time_%s_Myr.pdf'%(str(int(times[i]))))

@@ -22,17 +22,24 @@ for arrow in time_arrows:
     phasespace_files = glob.glob(wide_orbits_direc + 'data/forward_in_time/phasespace_%s_*.ascii'%(arrow))
     stellar_files = glob.glob(wide_orbits_direc + 'data/forward_in_time/stellar_evolution_%s_*.ascii'%(arrow))
     times = np.loadtxt(wide_orbits_direc + 'data/forward_in_time/snapshot_times_%s.txt'%(arrow))
-    galaxy_mass_list = np.loadtxt(wide_orbits_direc + 'data/forward_in_time/snapshot_galaxy_masses_%s.txt'%(arrow))
+    #galaxy_mass_list = np.loadtxt(wide_orbits_direc + 'data/forward_in_time/snapshot_galaxy_masses_%s.txt'%(arrow))
     
-    hl_radius = 15.48
-    angles = np.linspace(0., 2*np.pi, 100)
-    xcirc = [ hl_radius * np.cos(angle) for angle in angles ]
-    ycirc = [ hl_radius * np.sin(angle) for angle in angles ]
+    times = np.linspace(0., 64., 9)
+    
+    #hl_radius = 15.48
+    #angles = np.linspace(0., 2*np.pi, 100)
+    #xcirc = [ hl_radius * np.cos(angle) for angle in angles ]
+    #ycirc = [ hl_radius * np.sin(angle) for angle in angles ]
+    
+    print(times)
+    
+    plt.figure()
+    plt.gca().set_aspect('equal')
     
     for j, (file_phase, file_stellar) in enumerate(zip(phasespace_files, stellar_files)):
             
         print(j)
-        time_show = times[j*20]
+        time_show = times[j]
         
         data_phase = np.loadtxt(file_phase)
         data_stellar = np.loadtxt(file_stellar)
@@ -44,13 +51,21 @@ for arrow in time_arrows:
         yvals_stars = data_phase[:,2]
         zvals_stars = data_phase[:,3]
         
-        x_med = np.median(xvals_stars)
-        y_med = np.median(yvals_stars)
-        z_med = np.median(zvals_stars)
+        x_med = np.median(xvals_stars)/1000.
+        y_med = np.median(yvals_stars)/1000.
+        z_med = np.median(zvals_stars)/1000.
         R_GC = np.sqrt(x_med**2. + y_med**2. + z_med**2.)
         
         lums = data_stellar[:,1]
         temps = data_stellar[:,2]
+        
+        print(time_show)
+        print(R_GC)
+        print('')
+        
+        plt.scatter(x_med, y_med, label=r'$t = %.0f \, {\rm Myr}$'%(time_show))
+        
+        '''
         
         plt.figure(figsize=(8,8))
         plt.gca().set_aspect('equal')
@@ -78,7 +93,6 @@ for arrow in time_arrows:
         plt.savefig('LCC_MW_%s.pdf'%(str(j).rjust(6, '0')))
         plt.close()
         
-        '''
         masses = data_stellar[:,0]
         total_mass = np.sum(masses)
         
@@ -167,3 +181,10 @@ for arrow in time_arrows:
         fig.savefig('LCC_subplots_%s_%s.pdf'%(str(j).rjust(6, '0'), arrow))
         plt.close()
         '''
+    
+    plt.xlabel(r'$x_{\rm MW} \hspace{2mm} ({\rm kpc})$', fontsize=18)
+    plt.ylabel(r'$y_{\rm MW} \hspace{2mm} ({\rm kpc})$', fontsize=18)
+    plt.xlim(-10., 10.)
+    plt.ylim(-10., 10.)
+    plt.legend(loc='best')
+    plt.savefig('LCC_MW_snapshots.pdf')

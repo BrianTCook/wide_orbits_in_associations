@@ -35,14 +35,22 @@ for i in [0, 1, 2]:
         plt_str = 'gamma'
         plt.xlabel(r'$\gamma$', fontsize=16)
     
+    print('')
+    print(plt_str)
+    
+    plt.ylabel('PDF', fontsize=16)
+    
     for j, data_set in enumerate(data):
+        
+        print(j)
         
         estimates = np.loadtxt(data_set)
         
-        plt.hist(estimates[:,i], bins=50, density=True, histtype='step', color='C' + str(j), label=r'$t = %.0f {\rm Myr}$'%(times[j]))
-        plt.gca().set_yscale('log')
+        plt.hist(estimates[:,i], bins=50, density=True, histtype='step', 
+                 color='C' + str(j), label=r'$t = %.0f {\rm Myr}$'%(times[j]), linewidth=0.5)
+        #plt.gca().set_yscale('log')
     
-    plt.legend(loc='upper left', fontsize=8)
+    plt.legend(loc='lower right', fontsize=6)
     plt.tight_layout()
     plt.savefig('MCMC_plot_%s.pdf'%(plt_str))
     plt.close()
