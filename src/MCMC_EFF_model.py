@@ -115,7 +115,7 @@ for i, file in enumerate(files):
     nwalkers, ndim = pos.shape
     
     sampler = emcee.EnsembleSampler(nwalkers, ndim, log_probability, args=(r, rho, rho_err))
-    sampler.run_mcmc(pos, 5000, progress=True)
+    sampler.run_mcmc(pos, 20000, progress=True)
 
     '''
     fig, axes = plt.subplots(3, figsize=(10, 7), sharex=True)
