@@ -65,12 +65,12 @@ def simulation(mass_association, Nclumps, time_reversal):
 		sim_times = [ t|units.Myr for t in sim_times_unitless ]
 
 		#for 3D numpy array storage
-		Nsavetimes = 8
+		Nsavetimes = 9
 		Ntotal = len(gravity.particles)
 	    
 		grav_data = np.zeros((Nsavetimes, Ntotal, 7))
 		stellar_data = np.zeros((Nsavetimes, Ntotal, 3))
-		energy_data = np.zeros(Nsavetimes+1)
+		energy_data = np.zeros(Nsavetimes)
 
 		#for saving in write_set_to_file
 		filename_grav = 'data_temp_grav.csv'
@@ -80,7 +80,7 @@ def simulation(mass_association, Nclumps, time_reversal):
 		attributes_stellar = ('mass', 'luminosity', 'temperature')
 
 		print('len(sim_times) is', len(sim_times))
-		saving_flag = int(math.floor(len(sim_times)/Nsavetimes))
+		saving_flag = int(math.floor(len(sim_times)/(Nsavetimes-1)))
 		print('saving_flag: %i'%(saving_flag))
 
 		snapshot_galaxy_masses = [ 0. for i in range(Nsavetimes) ]
