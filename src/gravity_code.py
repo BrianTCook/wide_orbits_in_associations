@@ -40,16 +40,21 @@ def Hill_radius(r, Msub, Mparent):
     
     return r * (Msub / (3*Mparent))**(1/3.)
 
-def solver_codes_initial_setup(code_name, galaxy_code, Nclumps, time_reversal):
+def solver_codes_initial_setup(code_name, galaxy_code, Nclumps, time_reversal, background):
     
 	'''
 	will need to ask SPZ if he meant for field, orbiter to be separate in non
 	Nemesis gravity solvers?
 	'''
 
+	if background == True:
+		background_str = 'with_background'
+	if background == False:
+		background_str = 'without_background'
+
 	if time_reversal == False:
 
-		filename = '/home/brian/Desktop/wide_orbits_in_associations/data/LCC_phase_space_ICs.csv'
+		filename = '/home/brian/Desktop/wide_orbits_in_associations/data/LCC_PhaseSpace_ICs_%s.csv'%(background_str)
 		stars = read_set_from_file(filename, "csv")
 
 		#stored going the wrong way
@@ -58,8 +63,9 @@ def solver_codes_initial_setup(code_name, galaxy_code, Nclumps, time_reversal):
 		stars.vz *= -1.
 
 	if time_reversal == True:
-		mass_association = 700. #|units.MSun
-		stars = LCC_maker(mass_association, Nclumps, time_reversal)
+		
+		filename = '/home/brian/Desktop/wide_orbits_in_associations/data/LCC_PhaseSpace_present_epoch.csv'
+		stars = read_set_from_file(filename, "csv")
 
 	x_med, y_med, z_med = np.median(stars.x.value_in(units.kpc)), np.median(stars.y.value_in(units.kpc)), np.median(stars.z.value_in(units.kpc))
 
@@ -78,8 +84,6 @@ def solver_codes_initial_setup(code_name, galaxy_code, Nclumps, time_reversal):
 	converter_parent = nbody_system.nbody_to_si(Mgal|units.MSun, R_GC|units.kpc)
 	converter_sub = nbody_system.nbody_to_si(np.median(stars.mass.value_in(units.MSun))|units.MSun, 1.|units.parsec) #masses list is in solar mass units
 
-	gravity = bridge.Bridge(use_threading=False)
-
 	if code_name != 'nemesis':
 
 		stellar = SeBa()
@@ -88,7 +92,15 @@ def solver_codes_initial_setup(code_name, galaxy_code, Nclumps, time_reversal):
 		#bridges each cluster with the bulge, not the other way around though
 		herm = Hermite(converter_parent)
 		herm.particles.add_particles(stars)
-		gravity.add_system(herm, (galaxy_code,))  
+
+		if background == True:
+
+			gravity = bridge.Bridge(use_threading=False)
+			gravity.add_system(herm, (galaxy_code,))  
+
+		if background == False:
+
+			gravity = herm
 	    
 	if code_name == 'nemesis':
 

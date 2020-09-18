@@ -45,16 +45,24 @@ def flip_velocity(x):
 
 	return x
 
-def simulation(mass_association, Nclumps, time_reversal):
+def simulation(mass_association, Nclumps, time_reversal, background):
 
 	'''
 	runs gravity + stellar for the LCC model
 	'''
 
+	if background == True:
+
+		background_str = 'with_background'
+
+	if background == False:
+
+		background_str = 'without_background'
+
 	galaxy_code = to_amuse(MWPotential2014, t=0.0, tgalpy=0.0, reverse=False, ro=None, vo=None)
     
 	code_name = 'not nemesis'
-	stars_g, stars_s, gravity, stellar = solver_codes_initial_setup(code_name, galaxy_code, Nclumps, time_reversal) #stars for gravity, stars for stellar
+	stars_g, stars_s, gravity, stellar = solver_codes_initial_setup(code_name, galaxy_code, Nclumps, time_reversal, background) #stars for gravity, stars for stellar
 
 	if time_reversal == False:
 
@@ -121,7 +129,7 @@ def simulation(mass_association, Nclumps, time_reversal):
 				data_t_grav = data_t_grav.astype(float) #strings to floats
 
 				grav_data[j_like_index, :len(data_t_grav.index), :] = data_t_grav.values
-				np.savetxt('phasespace_%s_frame_%s_LCC.ascii'%(forward_or_backward, str(j).rjust(5, '0')), data_t_grav.values)
+				np.savetxt('PhaseSpace_%s_%s_frame_%s_LCC.ascii'%(forward_or_backward, background_str, str(j).rjust(5, '0')), data_t_grav.values)
 
 				#stellar stuff
 
@@ -135,7 +143,7 @@ def simulation(mass_association, Nclumps, time_reversal):
 				data_t_stellar = data_t_stellar.astype(float) #strings to floats
 
 				stellar_data[j_like_index, :len(data_t_stellar.index), :] = data_t_stellar.values
-				np.savetxt('stellar_evolution_%s_frame_%s_LCC.ascii'%(forward_or_backward, str(j).rjust(5, '0')), data_t_stellar.values)
+				np.savetxt('StellarEvolution_%s_%s_frame_%s_LCC.ascii'%(forward_or_backward, background_str, str(j).rjust(5, '0')), data_t_stellar.values)
 
 				x_med, y_med, z_med = np.median(data_t_grav['x'])/1000., np.median(data_t_grav['y'])/1000., np.median(data_t_grav['z'])/1000.
 
@@ -161,9 +169,9 @@ def simulation(mass_association, Nclumps, time_reversal):
 			gravity.evolve_model(t)
 			channel_from_gravity_to_framework.copy()
 
-		np.savetxt('snapshot_times_%s.txt'%(forward_or_backward), snapshot_times)
-		np.savetxt('snapshot_galaxy_masses_%s.txt'%(forward_or_backward), snapshot_galaxy_masses)
-		np.savetxt('snapshot_deltaEs_%s.txt'%(forward_or_backward), energy_data)
+		np.savetxt('Times_%s_%s.txt'%(forward_or_backward, background_str), snapshot_times)
+		np.savetxt('Galaxy_Masses_%s_%s.txt'%(forward_or_backward, background_str), snapshot_galaxy_masses)
+		np.savetxt('DeltaEs_%s_%s.txt'%(forward_or_backward, background_str), energy_data)
 
 		gravity.stop()
 		stellar.stop()
@@ -180,7 +188,7 @@ def simulation(mass_association, Nclumps, time_reversal):
 
 		print('backward simulation is ready to start')
 
-		filename_init = 'LCC_phase_space_present_epoch.csv'
+		filename_init = 'LCC_PhaseSpace_present_epoch.csv'
 		attributes_grav = ('mass', 'x', 'y', 'z', 'vx', 'vy', 'vz')
 		io.write_set_to_file(gravity.particles, filename_init, 'csv',
 							 attribute_types = (units.MSun, units.parsec, units.parsec, units.parsec, units.kms, units.kms, units.kms),
@@ -190,7 +198,7 @@ def simulation(mass_association, Nclumps, time_reversal):
 		gravity.evolve_model(t_end)
 		channel_from_gravity_to_framework.copy()
 
-		filename_backward = 'LCC_phase_space_backwards.csv'
+		filename_backward = 'backward_temp_%s.csv'%(background_str)
 		io.write_set_to_file(gravity.particles, filename_backward, 'csv',
 					 attribute_types = (units.MSun, units.parsec, units.parsec, units.parsec, units.kms, units.kms, units.kms),
 					 attribute_names = attributes_grav)
@@ -199,11 +207,22 @@ def simulation(mass_association, Nclumps, time_reversal):
 
 		df_backwards = pd.read_csv(filename_backward, names=list(attributes_grav))
 
-		df_ICs = df_backwards
-		df_ICs['vx'].apply(flip_velocity)
-		df_ICs['vy'].apply(flip_velocity)
-		df_ICs['vz'].apply(flip_velocity)
+		print('------------')
+		print('before flip')
+		print('------------')
+		print(df_backwards.head(10))
 
-		df_ICs.to_csv('LCC_phase_space_ICs.csv', index=False)
+		df_backwards['vx'].apply(flip_velocity)
+		df_backwards['vy'].apply(flip_velocity)
+		df_backwards['vz'].apply(flip_velocity)
+
+		print('------------')
+		print('after flip')
+		print('------------')
+		print(df_backwards.head(10))
+
+		df_ICs = df_backwards
+
+		df_ICs.to_csv('LCC_PhaseSpace_ICs_%s.csv'%(background_str), index=False)
 		
 	return 1
