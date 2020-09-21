@@ -17,7 +17,7 @@ data = glob.glob('/Users/BrianTCook/Desktop/wide_orbits_in_associations/data/for
 times = np.linspace(0., 64., 9)
 
 for bg_str in ['with_background', 'without_background']:
-
+    
     for i in [0, 1, 2]:
         
         plt.figure()
@@ -53,7 +53,6 @@ for bg_str in ['with_background', 'without_background']:
             #plt.gca().set_yscale('log')
         
         plt.legend(loc='lower right', fontsize=6)
-        #plt.title(r'%s'%(bg_str))
         plt.tight_layout()
         plt.savefig('MCMC_plot_%s_%s.pdf'%(plt_str, bg_str))
         plt.close()

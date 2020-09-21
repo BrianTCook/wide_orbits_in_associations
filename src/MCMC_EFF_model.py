@@ -27,7 +27,7 @@ def log_prior(theta):
     
     rho_0, a, gamma = theta
     
-    if rho_0 > 0. and a > 0. and gamma > 0.:
+    if rho_0 > 0. and a > 0. and gamma > 0. and rho_0 < 0.5 and a < 100. and gamma < 40.:
         
         return 0.
     
@@ -73,97 +73,67 @@ for bg_str in background_strs:
     
     files = glob.glob('/Users/BrianTCook/Desktop/wide_orbits_in_associations/data/forward_%s/PhaseSpace_*_LCC.ascii'%(bg_str))
     
-    for i in [0, 1, 2]:
-    
-        for k, file in enumerate(files):
-    
-            print('-----------------------------')
-            print(bg_str)
-            print('time is: %.02f Myr'%(times[k]))
-            
-            data_init = np.loadtxt(file)
-            
-            center_of_mass = np.average(data_init[:,1:4], axis=0, weights=data_init[:,0])
-            print(center_of_mass)
-            
-            positions = data_init[:,1:4]
-            rvals = [ np.linalg.norm(position - center_of_mass) for position in positions ]
-            
-            df_init = pd.DataFrame(data=data_init, columns=('mass', 'x', 'y', 'z', 'vx', 'vy', 'vz'))
-            df_init.insert(1, 'Distance from COM', rvals, True)
-            df_init = df_init.sort_values(by=['Distance from COM'])
-            
-            mass_association = np.sum(data_init[:,0]) #from present epoch values
-            r_max = 63.945 #from present epoch values
-            a_true, gamma_true = 50.1, 15.2 #from present epoch values
-            rho_0_true = 3 * mass_association / ( 4 * np.pi * r_max**3. * hyp2f1(3/2., (gamma_true+1.)/2., 5/2., -(r_max/a_true)**2.)) #solar masses per parsec
-            
-            Nbins = 40
-            r_edges = np.linspace(0., r_max, Nbins+1) #edges
-            r_centers = [ 0.5*(r_edges[i]+r_edges[i+1]) for i in range(Nbins) ] #centers
-            delta_r = r_centers[1] - r_centers[0]
-            
-            shell_volumes = [ 4*np.pi*r**2. * delta_r for r in r_centers ]
-            
-            rho = [ 0. for i in range(Nbins) ]
-            
-            for j, (r, shell) in enumerate(zip(r_centers, shell_volumes)):
-            
-                df = df_init[df_init['Distance from COM'] > r - delta_r/2.]
-                df = df[df['Distance from COM'] < r + delta_r/2.]
-                
-                rho[j] = np.sum(df['mass'].tolist()) / shell
-            
-            rho_err = [ 0.1*rhoval for rhoval in rho ]
-            
-            r = r_centers
-            
-            initial = np.array([rho_0_true, a_true, gamma_true]) + 0.1 * np.random.randn(3)
-            soln = minimize(nll, initial, args=(r, rho, rho_err))
-            rho_0_ml, a_ml, gamma_ml = soln.x
-            
-            pos = soln.x + 1e-4 * np.random.randn(32, 3)
-            nwalkers, ndim = pos.shape
-            
-            sampler = emcee.EnsembleSampler(nwalkers, ndim, log_probability, args=(r, rho, rho_err))
-            sampler.run_mcmc(pos, 50000, progress=True)
-            
-            flat_samples = sampler.get_chain(discard=10000, flat=True) 
-            
-            labels = [ r'$\rho_{0} \hspace{2mm} [M_{\odot} \, {\rm pc}^{-3}]$', r'$a \hspace{2mm} [{\rm pc}]$', r'$\gamma$' ]
-            fig = corner.corner(flat_samples, labels=labels, truths=[rho_0_true, a_true, gamma_true])
-            plt.suptitle(r'$\rho(r, t = %.0f \hspace{2mm} {\rm Myr}) \simeq \rho_{0}\left(1+(r/a)^{2}\right)^{-\gamma/2}$'%(times[k]), fontsize=18, x=0.6666, y=0.83333)
-            plt.subplots_adjust(top=0.96)
-            plt.savefig('MCMC_histograms_time_%s_Myr_%s.pdf'%(str(int(times[k])), bg_str))
-            plt.close()
-            print('-----------------------------')
-            
-            plt.figure()
-        
-            if i == 0:
-                
-                plt_str = 'rho_naught'
-                plt.xlabel(r'$\rho_{0} \hspace{4mm} [M_{\odot}/{\rm pc}^{3}]$', fontsize=16)
-                
-            if i == 1:
-                
-                plt_str = 'a'
-                plt.xlabel(r'$a \hspace{4mm} [{\rm pc}]$', fontsize=16)
-                
-            if i == 2:
-        
-                plt_str = 'gamma'
-                plt.xlabel(r'$\gamma$', fontsize=16)
-            
-            print('')
-            print(plt_str)
-            
-            plt.ylabel('PDF', fontsize=16)
+    for k, file in enumerate(files):
 
-            plt.hist(flat_samples[:,i], bins=40, density=True, histtype='step', 
-                     color='C' + str(k), label=r'$t = %.0f {\rm Myr}$'%(times[k]), linewidth=0.5)
+        print('-----------------------------')
+        print(bg_str)
+        print('time is: %.02f Myr'%(times[k]))
+        
+        data_init = np.loadtxt(file)
+        
+        center_of_mass = np.average(data_init[:,1:4], axis=0, weights=data_init[:,0])
+        print(center_of_mass)
+        
+        positions = data_init[:,1:4]
+        rvals = [ np.linalg.norm(position - center_of_mass) for position in positions ]
+        
+        df_init = pd.DataFrame(data=data_init, columns=('mass', 'x', 'y', 'z', 'vx', 'vy', 'vz'))
+        df_init.insert(1, 'Distance from COM', rvals, True)
+        df_init = df_init.sort_values(by=['Distance from COM'])
+        
+        mass_association = np.sum(data_init[:,0]) #from present epoch values
+        r_max = 63.945 #from present epoch values
+        a_true, gamma_true = 50.1, 15.2 #from present epoch values
+        rho_0_true = 3 * mass_association / ( 4 * np.pi * r_max**3. * hyp2f1(3/2., (gamma_true+1.)/2., 5/2., -(r_max/a_true)**2.)) #solar masses per parsec
+        
+        Nbins = 20
+        r_edges = np.linspace(0., r_max, Nbins+1) #edges
+        r_centers = [ 0.5*(r_edges[i]+r_edges[i+1]) for i in range(Nbins) ] #centers
+        delta_r = r_centers[1] - r_centers[0]
+        
+        shell_volumes = [ 4*np.pi*r**2. * delta_r for r in r_centers ]
+        
+        rho = [ 0. for i in range(Nbins) ]
+        
+        for j, (r, shell) in enumerate(zip(r_centers, shell_volumes)):
+        
+            df = df_init[df_init['Distance from COM'] > r - delta_r/2.]
+            df = df[df['Distance from COM'] < r + delta_r/2.]
             
-            plt.legend(loc='lower right', fontsize=6)
-            plt.tight_layout()
-            plt.savefig('MCMC_plot_%s_%s.pdf'%(plt_str, bg_str))
-            plt.close()
+            rho[j] = np.sum(df['mass'].tolist()) / shell
+        
+        rho_err = [ 0.1*rhoval for rhoval in rho ]
+        
+        r = r_centers
+        
+        initial = np.array([rho_0_true, a_true, gamma_true]) + 0.1 * np.random.randn(3)
+        soln = minimize(nll, initial, args=(r, rho, rho_err))
+        rho_0_ml, a_ml, gamma_ml = soln.x
+        
+        pos = soln.x + 1e-4 * np.random.randn(32, 3)
+        nwalkers, ndim = pos.shape
+        
+        sampler = emcee.EnsembleSampler(nwalkers, ndim, log_probability, args=(r, rho, rho_err))
+        sampler.run_mcmc(pos, 20000, progress=True)
+        
+        flat_samples = sampler.get_chain(discard=5000, flat=True) 
+        
+        np.savetxt('MCMC_data_%i_Myr_%s.txt'%(times[k], bg_str), flat_samples)
+        
+        labels = [ r'$\rho_{0} \hspace{2mm} [M_{\odot} \, {\rm pc}^{-3}]$', r'$a \hspace{2mm} [{\rm pc}]$', r'$\gamma$' ]
+        fig = corner.corner(flat_samples, labels=labels, truths=[rho_0_true, a_true, gamma_true])
+        plt.suptitle(r'$\rho(r, t = %.0f \hspace{2mm} {\rm Myr}) \simeq \rho_{0}\left(1+(r/a)^{2}\right)^{-\gamma/2}$'%(times[k]), fontsize=18, x=0.6666, y=0.83333)
+        plt.subplots_adjust(top=0.96)
+        plt.savefig('MCMC_histograms_time_%s_Myr_%s.pdf'%(str(int(times[k])), bg_str))
+        plt.close()
+        print('-----------------------------')

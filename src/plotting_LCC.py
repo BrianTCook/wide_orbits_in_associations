@@ -15,13 +15,13 @@ plt.rc('font', family='serif')
 
 wide_orbits_direc = '/Users/BrianTCook/Desktop/wide_orbits_in_associations/'
 
-time_arrows = [ 'forward' ]
+backgrounds = [ 'with_background', 'without_background' ]
 
-for arrow in time_arrows:
+for bg_str in backgrounds:
     
-    phasespace_files = glob.glob(wide_orbits_direc + 'data/forward_in_time/phasespace_%s_*.ascii'%(arrow))
-    stellar_files = glob.glob(wide_orbits_direc + 'data/forward_in_time/stellar_evolution_%s_*.ascii'%(arrow))
-    times = np.loadtxt(wide_orbits_direc + 'data/forward_in_time/snapshot_times_%s.txt'%(arrow))
+    phasespace_files = glob.glob(wide_orbits_direc + 'data/forward_%s/PhaseSpace_forward_%s_*.ascii'%(bg_str, bg_str))
+    stellar_files = glob.glob(wide_orbits_direc + 'data/forward_%s/StellarEvolution_forward_%s_*.ascii'%(bg_str, bg_str))
+    #times = np.loadtxt(wide_orbits_direc + 'data/forward_in_time/snapshot_times_%s.txt'%(arrow))
     #galaxy_mass_list = np.loadtxt(wide_orbits_direc + 'data/forward_in_time/snapshot_galaxy_masses_%s.txt'%(arrow))
     
     times = np.linspace(0., 64., 9)
@@ -187,4 +187,4 @@ for arrow in time_arrows:
     plt.xlim(-10., 10.)
     plt.ylim(-10., 10.)
     plt.legend(loc='best')
-    plt.savefig('LCC_MW_snapshots.pdf')
+    plt.savefig('LCC_MW_snapshots_%s.pdf'%(bg_str))
