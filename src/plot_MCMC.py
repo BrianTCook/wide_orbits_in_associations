@@ -28,7 +28,7 @@ def Jacobi_radius(theta, Mstar, rstar):
     
     hyp2f1(3/2., (gamma+1.)/2., 5/2., -(rstar/a)**2.)
     
-    return ((3*Mstar)/(4*np.pi*rho_0*hyp2f1(3/2., (gamma+1.)/2., 5/2., -(rstar/a)**2.)))**(1/3.)
+    return ((3*Mstar)/(4*np.pi*rho_0*rstar**(3.)*hyp2f1(3/2., (gamma+1.)/2., 5/2., -(rstar/a)**2.)))**(1/3.)
 
 def mode_finder(parameters):
     
@@ -39,7 +39,7 @@ def mode_finder(parameters):
     return p_mode
 
 times = np.linspace(0., 64., 9)
-bins = np.logspace(4.5, 6.5, 100)
+bins = np.logspace(3., 6., 100)
 
 for j, t in enumerate(times):
     
