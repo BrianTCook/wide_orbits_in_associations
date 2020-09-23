@@ -27,7 +27,7 @@ def log_prior(theta):
     
     rho_0, a, gamma = theta
     
-    if rho_0 > 0. and a > 0. and gamma > 0. and rho_0 < 0.5 and a < 100. and gamma < 40.:
+    if rho_0 > 0. and a > 0. and gamma > 0.:
         
         return 0.
     
@@ -120,13 +120,13 @@ for bg_str in background_strs:
         soln = minimize(nll, initial, args=(r, rho, rho_err))
         rho_0_ml, a_ml, gamma_ml = soln.x
         
-        pos = soln.x + 1e-4 * np.random.randn(32, 3)
+        pos = soln.x + 1e-4 * np.random.randn(104, 3)
         nwalkers, ndim = pos.shape
         
         sampler = emcee.EnsembleSampler(nwalkers, ndim, log_probability, args=(r, rho, rho_err))
-        sampler.run_mcmc(pos, 20000, progress=True)
+        sampler.run_mcmc(pos, 131072, progress=True)
         
-        flat_samples = sampler.get_chain(discard=5000, flat=True) 
+        flat_samples = sampler.get_chain(discard=1024, thin=2200, flat=True) 
         
         np.savetxt('MCMC_data_%i_Myr_%s.txt'%(times[k], bg_str), flat_samples)
         
