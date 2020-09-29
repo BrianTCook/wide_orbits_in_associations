@@ -10,24 +10,28 @@ import numpy as np
 import matplotlib.pyplot as plt
 from scipy.special import erf
 
-from EFF_with_clumps import find_nearest_index
+from amuse.lab import *
 
-plt.rc('text', usetex = True)
-plt.rc('font', family = 'serif')
+def find_nearest_index(value, array):
+
+	array = np.asarray(array)
+	idx = (np.abs(array - value)).argmin()
+
+	return idx
 
 def simpson(f, x_init, x_final, N_simp): #Simpson's integration rule, \int_{a}^{b} f(x) dx with N sample points
 
-    h = (x_final-x_init)/N_simp
+	h = (x_final-x_init)/N_simp
 
-    I = f(x_init) + f(x_final)
+	I = f(x_init) + f(x_final)
 
-    odds = [4*f(x_init + k*h) for k in range(1,N_simp,2)]
-    evens = [2*f(x_init + k*h) for k in range(2,N_simp,2)]
-    I += sum(odds) + sum(evens)
+	odds = [4*f(x_init + k*h) for k in range(1,N_simp,2)]
+	evens = [2*f(x_init + k*h) for k in range(2,N_simp,2)]
+	I += sum(odds) + sum(evens)
 
-    I *= h/3.
-    
-    return I
+	I *= h/3.
+
+	return I
 
 def Cook_mass_fn(Nstars):
 
@@ -106,5 +110,5 @@ def Cook_mass_fn(Nstars):
             new_mass = delta_m * np.random.uniform() + bin_edges[idx_bin]
             list_of_masses.append(new_mass)
             
-    return [ m|units.MSun for m in list_of_masses ]
+    return list_of_masses
     

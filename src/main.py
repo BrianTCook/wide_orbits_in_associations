@@ -17,7 +17,7 @@ def main(mass_association, Nclumps):
 
 	for background in [False, True]:
 
-		simulation(mass_association, Nclumps, time_reversal=False, background=background)
+		simulation(mass_association, Nclumps, time_reversal=True, background=background)
 
 def new_option_parser():
 

@@ -62,7 +62,7 @@ def simulation(mass_association, Nclumps, time_reversal, background):
 	galaxy_code = to_amuse(MWPotential2014, t=0.0, tgalpy=0.0, reverse=False, ro=None, vo=None)
     
 	code_name = 'not nemesis'
-	stars_g, stars_s, gravity, stellar = solver_codes_initial_setup(code_name, galaxy_code, Nclumps, time_reversal, background) #stars for gravity, stars for stellar
+	stars_g, stars_s, gravity, stellar = solver_codes_initial_setup(code_name, galaxy_code, mass_association, Nclumps, time_reversal, background) #stars for gravity, stars for stellar
 
 	if time_reversal == False:
 

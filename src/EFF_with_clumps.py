@@ -39,9 +39,9 @@ def find_nearest_index(value, array):
 def r_max_finder(mass_association, a, gamma):
     
 	#normalizing factor has to be 
-	min_star_mass = np.amin(new_kroupa_mass_distribution(1000, 17.5|units.MSun).value_in(units.MSun))
+	min_star_mass = 0.02
 
-	delta_r = 0.5 #width of bins in parsecs
+	delta_r = 2. #width of bins in parsecs
 
 	matching_value = 1/3. * (a/delta_r) * min_star_mass / mass_association
 
@@ -86,7 +86,7 @@ def xyz_coords(mass_association, Nclumps, a, gamma):
 	r_max = r_max_finder(mass_association, a, gamma)
 	print('r_max: %.03f pc'%(r_max))
     
-	delta_r = 0.5 #width of bins in parsecs
+	delta_r = 2. #width of bins in parsecs
 
 	bin_edges = np.arange(0., r_max, delta_r) #edges of bins in parsecs
 	Nbins = len(bin_edges) - 1
@@ -102,7 +102,9 @@ def xyz_coords(mass_association, Nclumps, a, gamma):
 	for i in range(Nbins):
 
 		allowances[i] = cdf[i] - np.sum(allowances[:i])	 #mass per slice allowed
-        
+
+	print(allowances)        
+
 	bin_masses =  [ 0. for i in range(Nbins) ]
 	star_masses = []
 
@@ -123,10 +125,11 @@ def xyz_coords(mass_association, Nclumps, a, gamma):
 
 			new_members = 1
 
-		new_member_masses = Cook_mass_fn(new_members)
-		new_bin_mass = bin_masses[idx_bin] + new_member_masses.sum().value_in(units.MSun)
+		new_member_masses = Cook_mass_fn(new_members) #in MSun implicitly
 
-		if new_bin_mass < 1.05 * allowances[idx_bin]:
+		new_bin_mass = bin_masses[idx_bin] + np.sum(new_member_masses)
+
+		if new_bin_mass < 1.1 * allowances[idx_bin]:
 
 			if clump_flag < Nclumps:
 				clump_flag += 1
