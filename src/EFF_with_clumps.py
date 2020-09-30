@@ -101,9 +101,7 @@ def xyz_coords(mass_association, Nclumps, a, gamma):
 
 	for i in range(Nbins):
 
-		allowances[i] = cdf[i] - np.sum(allowances[:i])	 #mass per slice allowed
-
-	print(allowances)        
+		allowances[i] = cdf[i] - np.sum(allowances[:i])	 #mass per slice allowed       
 
 	bin_masses =  [ 0. for i in range(Nbins) ]
 	star_masses = []
@@ -222,6 +220,6 @@ def LCC_maker(mass_association, Nclumps, time_reversal):
 		star.vy = time_arrow * ( (vs[i] | units.kms) + V0 + VMW )
 		star.vz = time_arrow * ( (ws[i] | units.kms) + W0 + WMW )
 
-		star.mass = masses[i]
+		star.mass = masses[i] | units.MSun
 
 	return stars

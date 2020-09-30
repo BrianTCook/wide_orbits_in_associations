@@ -169,9 +169,9 @@ def simulation(mass_association, Nclumps, time_reversal, background):
 			gravity.evolve_model(t)
 			channel_from_gravity_to_framework.copy()
 
-		np.savetxt('Times_%s_%s.txt'%(forward_or_backward, background_str), snapshot_times)
-		np.savetxt('Galaxy_Masses_%s_%s.txt'%(forward_or_backward, background_str), snapshot_galaxy_masses)
-		np.savetxt('DeltaEs_%s_%s.txt'%(forward_or_backward, background_str), energy_data)
+		np.savetxt('Times_%s_%s.txt'%(forward_or_backward, background_str), snapshot_times, fmt='%s')
+		np.savetxt('Galaxy_Masses_%s_%s.txt'%(forward_or_backward, background_str), snapshot_galaxy_masses, fmt='%s')
+		np.savetxt('DeltaEs_%s_%s.txt'%(forward_or_backward, background_str), energy_data, fmt='%s')
 
 		gravity.stop()
 		stellar.stop()
@@ -186,13 +186,13 @@ def simulation(mass_association, Nclumps, time_reversal, background):
 
 		gravity.timestep = dt
 
-		print('backward simulation is ready to start')
-
 		filename_init = 'LCC_PhaseSpace_present_epoch.csv'
 		attributes_grav = ('mass', 'x', 'y', 'z', 'vx', 'vy', 'vz')
 		io.write_set_to_file(gravity.particles, filename_init, 'csv',
 							 attribute_types = (units.MSun, units.parsec, units.parsec, units.parsec, units.kms, units.kms, units.kms),
 							 attribute_names = attributes_grav)
+
+		print('backward simulation is ready to start')
 
 		channel_from_framework_to_gravity.copy()
 		gravity.evolve_model(t_end)

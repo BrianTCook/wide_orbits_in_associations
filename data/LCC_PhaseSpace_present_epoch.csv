@@ -1,6 +1,6 @@
 #mass,vx,vy,vz,x,y,z
-#-,((1000.0 * system.get('S.I.').base('length')) * (system.get('S.I.').base('time')**-1)),((1000.0 * system.get('S.I.').base('length')) * (system.get('S.I.').base('time')**-1)),((1000.0 * system.get('S.I.').base('length')) * (system.get('S.I.').base('time')**-1)),(3.08567758128e+16 * system.get('S.I.').base('length')),(3.08567758128e+16 * system.get('S.I.').base('length')),(3.08567758128e+16 * system.get('S.I.').base('length'))
-#None,1000.0 * m * s**-1,1000.0 * m * s**-1,1000.0 * m * s**-1,3.08567758128e+16 * m,3.08567758128e+16 * m,3.08567758128e+16 * m
+#(1.98892e+30 * system.get('S.I.').base('mass')),((1000.0 * system.get('S.I.').base('length')) * (system.get('S.I.').base('time')**-1)),((1000.0 * system.get('S.I.').base('length')) * (system.get('S.I.').base('time')**-1)),((1000.0 * system.get('S.I.').base('length')) * (system.get('S.I.').base('time')**-1)),(3.08567758128e+16 * system.get('S.I.').base('length')),(3.08567758128e+16 * system.get('S.I.').base('length')),(3.08567758128e+16 * system.get('S.I.').base('length'))
+#1.98892e+30 * kg,1000.0 * m * s**-1,1000.0 * m * s**-1,1000.0 * m * s**-1,3.08567758128e+16 * m,3.08567758128e+16 * m,3.08567758128e+16 * m
 2.46849549261,-0.910124728903,-226.761537803,6.31835437419,-8121.58561439,-102.088941315,6.79189429706
 0.400592644736,-0.978547683486,-226.752903287,6.37976999906,-8122.68805716,-106.098729858,23.5966108269
 0.622322520636,-0.976250873045,-226.80903491,6.29944908864,-8126.80968238,-90.3173043223,13.6266084231

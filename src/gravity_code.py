@@ -65,9 +65,7 @@ def solver_codes_initial_setup(code_name, galaxy_code, mass_association, Nclumps
 	if time_reversal == True:
 		
 		filename = '/home/brian/Desktop/wide_orbits_in_associations/data/LCC_PhaseSpace_present_epoch.csv'
-		stars = LCC_maker(mass_association, Nclumps, time_reversal)
-		write_set_to_file(stars, filename, "csv")
-		#stars = read_set_from_file(filename, "csv")
+		stars = read_set_from_file(filename, "csv")
 
 	x_med, y_med, z_med = np.median(stars.x.value_in(units.kpc)), np.median(stars.y.value_in(units.kpc)), np.median(stars.z.value_in(units.kpc))
 
