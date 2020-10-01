@@ -25,6 +25,9 @@ for i, file in enumerate(files):
     stellar_data = np.loadtxt(file)
     masses, lums, temps = stellar_data[:,0], stellar_data[:,1], stellar_data[:,2]
 
+    print('number of stars: %i'%(len(masses)))
+    print('total mass: %.06f'%(np.sum(masses)))
+
     fig, ax = plt.subplots(figsize=[5, 4])
     
     scat = ax.scatter(temps, lums, c=np.log10(masses), 

@@ -26,8 +26,6 @@ def Jacobi_radius(theta, Mstar, rstar):
     
     rho_0, a, gamma = theta
     
-    hyp2f1(3/2., (gamma+1.)/2., 5/2., -(rstar/a)**2.)
-    
     return ((3*Mstar)/(4*np.pi*rho_0*rstar**(3.)*hyp2f1(3/2., (gamma+1.)/2., 5/2., -(rstar/a)**2.)))**(1/3.)
 
 def mode_finder(parameters):

@@ -96,7 +96,7 @@ for bg_str in background_strs:
         a_true, gamma_true = 50.1, 15.2 #from present epoch values
         rho_0_true = 3 * mass_association / ( 4 * np.pi * r_max**3. * hyp2f1(3/2., (gamma_true+1.)/2., 5/2., -(r_max/a_true)**2.)) #solar masses per parsec
         
-        Nbins = 20
+        Nbins = 15
         r_edges = np.linspace(0., r_max, Nbins+1) #edges
         r_centers = [ 0.5*(r_edges[i]+r_edges[i+1]) for i in range(Nbins) ] #centers
         delta_r = r_centers[1] - r_centers[0]
@@ -124,9 +124,9 @@ for bg_str in background_strs:
         nwalkers, ndim = pos.shape
         
         sampler = emcee.EnsembleSampler(nwalkers, ndim, log_probability, args=(r, rho, rho_err))
-        sampler.run_mcmc(pos, 131072, progress=True)
+        sampler.run_mcmc(pos, 51000, progress=True)
         
-        flat_samples = sampler.get_chain(discard=1024, thin=2200, flat=True) 
+        flat_samples = sampler.get_chain(discard=1000, thin=100, flat=True) 
         
         np.savetxt('MCMC_data_%i_Myr_%s.txt'%(times[k], bg_str), flat_samples)
         
