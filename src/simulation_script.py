@@ -179,7 +179,7 @@ def simulation(mass_association, Nclumps, time_reversal, background):
 	else:
 
 		forward_or_backward = 'backward'
-		t_end, dt = 16.|units.Myr, 2|units.Myr
+		t_end, dt = 16.|units.Myr, 0.064|units.Myr
 
 		channel_from_gravity_to_framework = gravity.particles.new_channel_to(stars_g)
 		channel_from_framework_to_gravity = stars_g.new_channel_to(gravity.particles)
