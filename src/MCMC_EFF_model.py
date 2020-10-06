@@ -17,19 +17,67 @@ import corner
 
 np.random.seed(42)
 
+def gaussian(x, mu, sig):
+    
+    return np.exp( -(x - mu)**(2.) / (2. * sig**(2.)) )
+
 def EFF_model(theta, r):
     
     rho_0, a, gamma = theta
     
     return rho_0 * ( 1 + (r/a)**2. )**(-gamma/2.)
 
+def sigma_rho(theta_present, r, delta_r):
+    
+    rho_0_present, a_present, gamma_present = theta_present
+    
+    return -gamma_present * (r/(a_present)**(2.)) * (1 + (r/a_present)**(2.))**(-gamma_present/2. - 1) * (delta_r / 2.)
+
+def r_max_finder(mass_association, a, gamma):
+    
+	#normalizing factor has to be 
+	min_star_mass = 0.02
+
+	delta_r = 2. #width of bins in parsecs
+
+	matching_value = 1/3. * (a/delta_r) * min_star_mass / mass_association
+
+	def f(u):
+
+		return 1./u * (1+u**(2.))**(-gamma/2.) - matching_value
+
+	u_min, u_max = 1e-3, 5.
+	delta = u_max - u_min
+
+	while True:
+
+		if f(u_min + delta/2.) * f(u_max) < 0.:
+
+			u_min += delta/2.
+
+		if f(u_min) * f(u_max - delta/2.) < 0.:
+
+			u_max -= delta/2.
+
+		delta = u_max - u_min
+
+		if delta < 1e-6:
+
+			return 0.5*(u_min + u_max) * a
+
 def log_prior(theta):
     
     rho_0, a, gamma = theta
+    rho_0_present, a_present, gamma_present = 0.017964432528751385, 50.1, 15.2
+    rho_0_sig, a_sig, gamma_sig = 0.05*rho_0_present, 5.01, 1.52
     
     if rho_0 > 0. and a > 0. and gamma > 0.:
         
-        return 0.
+        rho_0_gaussian = gaussian(rho_0, rho_0_present, rho_0_sig)
+        a_gaussian = gaussian(a, a_present, a_sig)
+        gamma_gaussian = gaussian(gamma, gamma_present, gamma_sig)
+        
+        return np.log( rho_0_gaussian * a_gaussian * gamma_gaussian )
     
     return -np.inf
 
@@ -41,7 +89,7 @@ def log_likelihood(theta, r, rho, rho_err):
     model = [ EFF_model(theta, rval) for rval in r ]
     sigma2 = [ err**2. for err in rho_err ]
     
-    summand = [ (rho[i] - model[i]) ** 2. / sigma2[i] + np.log(sigma2[i]) for i in range(N) ]
+    summand = [ ((rho[i] - model[i])**(2.) )/(sigma2[i]) + np.log(2*np.pi*sigma2[i]) for i in range(N) ]
 
     try:
     
@@ -67,12 +115,15 @@ times = np.linspace(0., 64., 9)
 plt.rc('text', usetex=True)
 plt.rc('font', family='serif')
 
-background_strs = ['with_background', 'without_background']
+background_strs = [ 'with_background' ]
 
 for bg_str in background_strs:
     
     files = glob.glob('/Users/BrianTCook/Desktop/wide_orbits_in_associations/data/forward_%s/PhaseSpace_*_LCC.ascii'%(bg_str))
     
+    rho_0_present, a_present, gamma_present = 0.017964432528751385, 50.1, 15.2
+    theta_present = rho_0_present, a_present, gamma_present
+
     for k, file in enumerate(files):
 
         print('-----------------------------')
@@ -91,14 +142,10 @@ for bg_str in background_strs:
         df_init.insert(1, 'Distance from COM', rvals, True)
         df_init = df_init.sort_values(by=['Distance from COM'])
         
-        mass_association = np.sum(data_init[:,0]) #from present epoch values
-        r_max = 63.945 #from present epoch values
-        a_true, gamma_true = 50.1, 15.2 #from present epoch values
-        rho_0_true = 3 * mass_association / ( 4 * np.pi * r_max**3. * hyp2f1(3/2., (gamma_true+1.)/2., 5/2., -(r_max/a_true)**2.)) #solar masses per parsec
-        
-        Nbins = 15
-        r_edges = np.linspace(0., r_max, Nbins+1) #edges
+        Nbins = 20
+        r_edges = np.linspace(0., a_present, Nbins+1) #edges
         r_centers = [ 0.5*(r_edges[i]+r_edges[i+1]) for i in range(Nbins) ] #centers
+        
         delta_r = r_centers[1] - r_centers[0]
         
         shell_volumes = [ 4*np.pi*r**2. * delta_r for r in r_centers ]
@@ -112,11 +159,15 @@ for bg_str in background_strs:
             
             rho[j] = np.sum(df['mass'].tolist()) / shell
         
-        rho_err = [ 0.1*rhoval for rhoval in rho ]
+        print('rho_j(D): ', rho)
+        
+        rho_err = [  sigma_rho(theta_present, r, delta_r) for r in r_centers ]
+        
+        print('rhoerr_j(D): ', rho_err)
         
         r = r_centers
         
-        initial = np.array([rho_0_true, a_true, gamma_true]) + 0.1 * np.random.randn(3)
+        initial = np.array([rho_0_present, a_present, gamma_present]) + 0.1 * np.random.randn(3)
         soln = minimize(nll, initial, args=(r, rho, rho_err))
         rho_0_ml, a_ml, gamma_ml = soln.x
         
@@ -126,12 +177,12 @@ for bg_str in background_strs:
         sampler = emcee.EnsembleSampler(nwalkers, ndim, log_probability, args=(r, rho, rho_err))
         sampler.run_mcmc(pos, 51000, progress=True)
         
-        flat_samples = sampler.get_chain(discard=1000, thin=100, flat=True) 
+        flat_samples = sampler.get_chain(discard=11000, thin=5, flat=True) 
         
         np.savetxt('MCMC_data_%i_Myr_%s.txt'%(times[k], bg_str), flat_samples)
         
         labels = [ r'$\rho_{0} \hspace{2mm} [M_{\odot} \, {\rm pc}^{-3}]$', r'$a \hspace{2mm} [{\rm pc}]$', r'$\gamma$' ]
-        fig = corner.corner(flat_samples, labels=labels, truths=[rho_0_true, a_true, gamma_true])
+        fig = corner.corner(flat_samples, labels=labels, truths=[rho_0_present, a_present, gamma_present])
         plt.suptitle(r'$\rho(r, t = %.0f \hspace{2mm} {\rm Myr}) \simeq \rho_{0}\left(1+(r/a)^{2}\right)^{-\gamma/2}$'%(times[k]), fontsize=18, x=0.6666, y=0.83333)
         plt.subplots_adjust(top=0.96)
         plt.savefig('MCMC_histograms_time_%s_Myr_%s.pdf'%(str(int(times[k])), bg_str))

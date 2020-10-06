@@ -50,7 +50,7 @@ def beta(star_data, theta, LCC_center_of_mass):
     
     return np.log10(ratio)
 
-times = [ 0., 8., 16., 24., 32. ]
+times = np.linspace(0., 64., 9)
 
 for j, t in enumerate(times):
     
@@ -82,9 +82,10 @@ for j, t in enumerate(times):
     h = sns.jointplot(x=beta_vals, y=min_distance_vals)
 
     # JointGrid has a convenience function
-    h.set_axis_labels(r'$\beta \equiv \log_{10}\left(r_{\rm H, LCC}/r_{\rm H, MW}\right)$', r'$\log_{10} {\rm min}\left({\bf r}_{\rm sep}\right) \, [{\rm AU}]$', fontsize=16)
+    h.set_axis_labels(r'$\beta \equiv \log_{10}\left(r_{\rm H, LCC}/r_{\rm H, MW}\right)$', r'$\log_{10} \left({\rm min}\left({\bf r}_{\rm sep}\right) \, [{\rm AU}]\right)$', fontsize=16)
     h.ax_marg_x.set_xlim(-1., 1.)
     h.ax_marg_y.set_ylim(2., 7.)
     
     h.fig.suptitle(r'$t_{\rm sim} = %.0f \, {\rm Myr}$'%(t))
-    plt.show()
+    plt.tight_layout()
+    plt.savefig('beta_vs_minsep_t_%.0f_Myr.pdf'%(t))
