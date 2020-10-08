@@ -10,6 +10,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import glob
 
+import pandas as pd
 from scipy.spatial.distance import pdist, squareform
 from scipy.special import hyp2f1
 
@@ -21,6 +22,13 @@ def EFF_model(theta, r):
     rho_0, a, gamma = theta
     
     return rho_0 * ( 1 + (r/a)**2. )**(-gamma/2.)
+
+def enclosed_mass(theta, r):
+    
+    rho_0, a, gamma = theta
+    mass_enc = (4*np.pi / 3.) * rho_0 * r**(3.) * hyp2f1(3/2., (gamma+1.)/2., 5/2., -(r/a)**2.) #solar masses
+
+    return mass_enc #no units, although we will need in terms of MSun
 
 def Jacobi_radius(theta, Mstar, rstar):
     
@@ -43,7 +51,7 @@ for j, t in enumerate(times):
     
     plt.figure()
     
-    for bg_str in ['with_background', 'without_background']:
+    for bg_str in [ 'with_background' ]:
 
         data_phase = glob.glob('/Users/BrianTCook/Desktop/wide_orbits_in_associations/data/forward_%s/PhaseSpace_*_%s_*.ascii'%(bg_str, bg_str))
         data_MCMC = glob.glob('/Users/BrianTCook/Desktop/wide_orbits_in_associations/data/forward_%s/MCMC_*_%s.txt'%(bg_str, bg_str))
@@ -64,38 +72,42 @@ for j, t in enumerate(times):
         masses = mass_and_phasespace[:, 0]
         
         N = len(masses)
-        
-        rvals = [ np.linalg.norm(position - center_of_mass) for position in positions ]
-        
-        Jacobi_radii = [ Jacobi_radius(theta, masses[i], rvals[i])*206265. for i in range(N) ] #AU
-        print(min(Jacobi_radii))
-    
+            
         rvals = np.linspace(0., 1.25*theta[1], 100)
-        rho_vals = [ EFF_model(theta, r) for r in rvals ]
-    
-        if bg_str == 'without_background':
-            
-            plt.hist(Jacobi_radii, bins=bins, color='b', histtype='step', linewidth=0.5,
-                     label=r'$t = %.0f \, \,  {\rm Myr, \, no \, MW}$'%(times[j]))
-            #plt.plot(rvals, rho_vals, color='C' + str(j), linestyle='-',
-            #         label=r'$t = %.0f \, \, {\rm Myr, \, no \, MW}$'%(times[j]), linewidth=0.5)
-            
-        if bg_str == 'with_background':
-            
-            plt.hist(Jacobi_radii, bins=bins, color='r', histtype='step', linewidth=0.5,
-                     label=r'$t = %.0f \, \,  {\rm Myr, \, MW}$'%(times[j]))
-            #plt.plot(rvals, rho_vals, color='C' + str(j), linestyle='-.',
-            #         label=r'$t = %.0f \, \,  {\rm Myr, \, MW}$'%(times[j]), linewidth=0.5)
+        mass_EFF = [ enclosed_mass(theta, r) for r in rvals ]
 
+        rvals_LCC = [ np.linalg.norm(position - center_of_mass) for position in positions ]
         
-    #plt.xlabel(r'$r \hspace{2mm} [{\rm pc}]$', fontsize=16)
-    #plt.ylabel(r'$\rho(r) \hspace{2mm} [M_{\odot}/{\rm pc}^{3}]$', fontsize=16)
-    plt.axvline(x=1.301*206265, linewidth=0.5, linestyle='-.', c='k', label=r'$r_{\rm sep}({\rm Sun}, \, {\rm Proxima \, \, Centauri})$')
-    plt.xlabel(r'$r_{\rm J} \, \, [{\rm AU}]$', fontsize=16)
-    plt.ylabel(r'Count', fontsize=16)
-    plt.legend(loc='upper right', fontsize=8)
-    plt.gca().set_xscale('log')
-    plt.gca().set_yscale('log')
+        df_init = pd.DataFrame(data=mass_and_phasespace, columns=('mass', 'x', 'y', 'z', 'vx', 'vy', 'vz'))
+        df_init.insert(1, 'Distance from COM', rvals_LCC, True)
+        df_init = df_init.sort_values(by=['Distance from COM'])
+            
+        rvals_data = np.linspace(0., 1.25*theta[1], 40)
+        mass_data = [ 0. for i in range(len(rvals_data)) ]
+        
+        delta_r = rvals_data[1] - rvals_data[0]
+        shell_volumes = [ 4*np.pi*r**2. * delta_r for r in rvals_data ]
+        
+        for k, (r, shell) in enumerate(zip(rvals_data, shell_volumes)):
+        
+            #df = df_init[df_init['Distance from COM'] > r - delta_r/2.]
+            #df = df[df['Distance from COM'] < r + delta_r/2.]
+            
+            df = df_init[df_init['Distance from COM'] < r]
+            
+            #rho_data[k] = np.sum(df['mass'].tolist()) / shell
+            mass_data[k] = np.sum(df['mass'].tolist())
+        
+        if bg_str == 'with_background':
+
+            plt.plot(rvals, mass_EFF, color='C' + str(j), linestyle='-.',
+                     label=r'$t = %.0f \, \,  {\rm Myr, \, EFF \, model}$'%(times[j]), linewidth=0.5)
+            plt.scatter(rvals_data, mass_data, color='C' + str(j), s=4,
+                        label=r'$t = %.0f \, \,  {\rm Myr, \, data}$'%(times[j]))
+
+    plt.xlabel(r'$r \, [{\rm pc}]$', fontsize=16)
+    plt.ylabel(r'$M_{\rm enc}(<r) \, [M_{\odot}]$', fontsize=16)
+    plt.legend(loc='upper left', fontsize=8)
     plt.tight_layout()
-    plt.savefig('Jacobi_radii_t_%i_Myr.pdf'%(t))
+    plt.savefig('EFF_to_data_t_%i_Myr.pdf'%(t))
     plt.close()

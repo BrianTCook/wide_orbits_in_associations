@@ -27,11 +27,18 @@ def EFF_model(theta, r):
     
     return rho_0 * ( 1 + (r/a)**2. )**(-gamma/2.)
 
+def enclosed_mass(theta, r):
+    
+    rho_0, a, gamma = theta
+    mass_enc = (4*np.pi / 3.) * rho_0 * r**(3.) * hyp2f1(3/2., (gamma+1.)/2., 5/2., -(r/a)**2.) #solar masses
+
+    return mass_enc #no units, although we will need in terms of MSun
+
 def sigma_rho(theta_present, r, delta_r):
     
     rho_0_present, a_present, gamma_present = theta_present
     
-    return -gamma_present * (r/(a_present)**(2.)) * (1 + (r/a_present)**(2.))**(-gamma_present/2. - 1) * (delta_r / 2.)
+    return -gamma_present * (r/(a_present)**(2.)) * (1 + (r/a_present)**(2.))**(-gamma_present/2. - 1) * (delta_r / 10.)
 
 def r_max_finder(mass_association, a, gamma):
     
@@ -68,46 +75,28 @@ def r_max_finder(mass_association, a, gamma):
 def log_prior(theta):
     
     rho_0, a, gamma = theta
-    rho_0_present, a_present, gamma_present = 0.017964432528751385, 50.1, 15.2
-    rho_0_sig, a_sig, gamma_sig = 0.05*rho_0_present, 5.01, 1.52
-    
     if rho_0 > 0. and a > 0. and gamma > 0.:
-        
-        rho_0_gaussian = gaussian(rho_0, rho_0_present, rho_0_sig)
-        a_gaussian = gaussian(a, a_present, a_sig)
-        gamma_gaussian = gaussian(gamma, gamma_present, gamma_sig)
-        
-        return np.log( rho_0_gaussian * a_gaussian * gamma_gaussian )
-    
+        return 0.0
     return -np.inf
 
-def log_likelihood(theta, r, rho, rho_err):
+def log_likelihood(theta, r, mass_enc, mass_enc_err):
     
     rho_0, a, gamma = theta
     N = len(r)
     
-    model = [ EFF_model(theta, rval) for rval in r ]
-    sigma2 = [ err**2. for err in rho_err ]
+    model = [ enclosed_mass(theta, rval) for rval in r ]
     
-    summand = [ ((rho[i] - model[i])**(2.) )/(sigma2[i]) + np.log(2*np.pi*sigma2[i]) for i in range(N) ]
-
-    try:
+    summand = [ ((mass_enc[i] - model[i])/(mass_enc_err[i]))**(2.) + np.log(2*np.pi*mass_enc_err[i]**(2.)) for i in range(N) ]
     
-        return -0.5 * np.sum(summand)
-    
-    except:
-        
+    if np.isnan(np.sum(summand)):
         return -np.inf
+    return -0.5*np.sum(summand)
 
-def log_probability(theta, r, rho, rho_err):
-    
+def log_probability(theta, r, mass_enc, mass_enc_err):
     lp = log_prior(theta)
-    
-    if not np.isfinite(lp):
-        
-        return -np.inf
-    
-    return lp + log_likelihood(theta, r, rho, rho_err)
+    if not np.isfinite(lp):        
+        return -np.inf    
+    return lp + log_likelihood(theta, r, mass_enc, mass_enc_err)
 
 nll = lambda *args: -log_likelihood(*args)
 times = np.linspace(0., 64., 9)
@@ -115,7 +104,7 @@ times = np.linspace(0., 64., 9)
 plt.rc('text', usetex=True)
 plt.rc('font', family='serif')
 
-background_strs = [ 'with_background' ]
+background_strs = [ 'with_background', 'without_background' ]
 
 for bg_str in background_strs:
     
@@ -123,6 +112,10 @@ for bg_str in background_strs:
     
     rho_0_present, a_present, gamma_present = 0.017964432528751385, 50.1, 15.2
     theta_present = rho_0_present, a_present, gamma_present
+
+    data_init = np.loadtxt(files[0])
+    mass_association = np.sum(data_init[:,0])
+    r_max = r_max_finder(mass_association, a_present, gamma_present)
 
     for k, file in enumerate(files):
 
@@ -142,42 +135,40 @@ for bg_str in background_strs:
         df_init.insert(1, 'Distance from COM', rvals, True)
         df_init = df_init.sort_values(by=['Distance from COM'])
         
-        Nbins = 20
-        r_edges = np.linspace(0., a_present, Nbins+1) #edges
-        r_centers = [ 0.5*(r_edges[i]+r_edges[i+1]) for i in range(Nbins) ] #centers
+        Nbins = 10
+        r_edges = np.linspace(1., r_max, Nbins+1) #edges
+        r = [ 0.5*(r_edges[i]+r_edges[i+1]) for i in range(Nbins) ] #centers
         
-        delta_r = r_centers[1] - r_centers[0]
+        mass_enc = [ 0. for i in range(Nbins) ]
         
-        shell_volumes = [ 4*np.pi*r**2. * delta_r for r in r_centers ]
+        for j, rval in enumerate(r):
         
-        rho = [ 0. for i in range(Nbins) ]
+            df = df_init[df_init['Distance from COM'] < rval]
+            mass_enc[j] = np.sum(df['mass'].tolist())
         
-        for j, (r, shell) in enumerate(zip(r_centers, shell_volumes)):
+        print(mass_enc)
         
-            df = df_init[df_init['Distance from COM'] > r - delta_r/2.]
-            df = df[df['Distance from COM'] < r + delta_r/2.]
-            
-            rho[j] = np.sum(df['mass'].tolist()) / shell
+        mass_enc_err = [ 0.05*mass_enc[i] for i in range(Nbins) ] 
         
-        print('rho_j(D): ', rho)
-        
-        rho_err = [  sigma_rho(theta_present, r, delta_r) for r in r_centers ]
-        
-        print('rhoerr_j(D): ', rho_err)
-        
-        r = r_centers
-        
+        nll = lambda *args: -log_likelihood(*args)
         initial = np.array([rho_0_present, a_present, gamma_present]) + 0.1 * np.random.randn(3)
-        soln = minimize(nll, initial, args=(r, rho, rho_err))
+        soln = minimize(nll, initial, args=(r, mass_enc, mass_enc_err))
         rho_0_ml, a_ml, gamma_ml = soln.x
         
-        pos = soln.x + 1e-4 * np.random.randn(104, 3)
+        #r_max = a_ml
+        
+        print("Maximum likelihood estimates:")
+        print("rho_0 = {0:.3f}".format(rho_0_ml))
+        print("a = {0:.3f}".format(a_ml))
+        print("gamma = {0:.3f}".format(gamma_ml))
+        
+        pos = soln.x + 1e-4 * np.random.randn(64, 3)
         nwalkers, ndim = pos.shape
         
-        sampler = emcee.EnsembleSampler(nwalkers, ndim, log_probability, args=(r, rho, rho_err))
-        sampler.run_mcmc(pos, 51000, progress=True)
+        sampler = emcee.EnsembleSampler(nwalkers, ndim, log_probability, args=(r, mass_enc, mass_enc_err))
+        sampler.run_mcmc(pos, 60000, progress=True)
         
-        flat_samples = sampler.get_chain(discard=11000, thin=5, flat=True) 
+        flat_samples = sampler.get_chain(discard=10000, thin=5, flat=True) 
         
         np.savetxt('MCMC_data_%i_Myr_%s.txt'%(times[k], bg_str), flat_samples)
         
