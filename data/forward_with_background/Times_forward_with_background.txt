@@ -1,9 +1,0 @@
-0.0 Myr
-8.0 Myr
-16.0 Myr
-24.0 Myr
-32.0 Myr
-40.0 Myr
-48.0 Myr
-56.0 Myr
-64.0 Myr
