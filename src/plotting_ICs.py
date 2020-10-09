@@ -9,35 +9,54 @@ Created on Tue Sep  8 08:32:15 2020
 import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
+import glob
 
 plt.rc('text', usetex=True)
 plt.rc('font', family='serif')
 
-datadir = '/Users/BrianTCook/Desktop/wide_orbits_in_associations/data'
+background_strs = [ 'with_background', 'without_background' ]
+times = np.linspace(0., 64., 9)
 
-df = pd.read_csv(datadir+'/temp_for_amuse.csv')
-df = df.drop([0, 1])
+for bg_str in background_strs:
+    
+    files = glob.glob('/Users/BrianTCook/Desktop/wide_orbits_in_associations/data/forward_%s/PhaseSpace_*_LCC.ascii'%(bg_str))
+    
+    rho_0_present, a_present, gamma_present = 0.017964432528751385, 50.1, 15.2
+    theta_present = rho_0_present, a_present, gamma_present
 
-masses = [ float(m) for m in df['#mass'].tolist() ]
-total_mass = np.sum(masses)          
+    for k, file in enumerate(files):
 
+        print('-----------------------------')
+        print(bg_str)
+        print('time is: %.02f Myr'%(times[k]))
+        
+        data_init = np.loadtxt(file)
+        
+        mass_association = np.sum(data_init[:,0])
+        r_max = r_max_finder(mass_association, a_present, gamma_present)
+        
+        center_of_mass = np.average(data_init[:,1:4], axis=0, weights=data_init[:,0])
+        print(center_of_mass)
+        
+        positions = data_init[:,1:4]
+        rvals = [ np.linalg.norm(position - center_of_mass) for position in positions ]
+        
+        df_init = pd.DataFrame(data=data_init, columns=('mass', 'x', 'y', 'z', 'vx', 'vy', 'vz'))
+        df_init.insert(1, 'Distance from COM', rvals, True)
+        df_init = df_init.sort_values(by=['Distance from COM'])
 
-xvals = [ float(x) for x in df['x'].tolist() ]
-yvals = [ float(y) for y in df['y'].tolist() ]
-
-x_med = np.median(xvals)
-y_med = np.median(yvals)
-
-xvals = [ x - x_med for x in xvals ]
-yvals = [ y - y_med for y in yvals ]
-
-plt.figure(figsize=(6,6))
-plt.gca().set_aspect('equal')
-plt.plot(xvals, yvals, color='black',marker=',',lw=0, linestyle='')
-plt.annotate(r'$M_{\rm LCC} = %.03f \hspace{2mm} M_{\odot}$'%(total_mass), xy=(0.6, 0.1), xycoords='axes fraction')
-plt.annotate(r'$\rho(r) \sim (1 + (r/a)^{2})^{-\gamma/2}$', xy=(0.6, 0.05), xycoords='axes fraction')
-plt.xlabel(r'$x-\tilde{x}_{\rm LCC}$ (pc)', fontsize=16)
-plt.ylabel(r'$y-\tilde{y}_{\rm LCC}$ (pc)', fontsize=16)
-plt.title(r'Lower Centaurus Crux at $t=0$ (sort of)', fontsize=16)
-plt.tight_layout()
-plt.savefig('LCC_IC.pdf')
+        xvals = [ float(x)-center_of_mass[0] for x in df_init['x'].tolist() ]
+        yvals = [ float(y)-center_of_mass[1] for y in df_init['y'].tolist() ]
+        
+        plt.figure(figsize=(6,6))
+        plt.gca().set_aspect('equal')
+        plt.xlim(-100, 100)
+        plt.ylim(-100, 100)
+        plt.plot(xvals, yvals, color='black',marker=',',lw=0, linestyle='')
+        plt.annotate(r'$M_{\rm LCC} = %.03f \hspace{2mm} M_{\odot}$'%(mass_association), xy=(0.6, 0.1), xycoords='axes fraction')
+        plt.annotate(r'$\rho(r) \sim (1 + (r/a)^{2})^{-\gamma/2}$', xy=(0.6, 0.05), xycoords='axes fraction')
+        plt.xlabel(r'$x-{x}_{\rm COM}$ (pc)', fontsize=16)
+        plt.ylabel(r'$y-{y}_{\rm COM}$ (pc)', fontsize=16)
+        plt.title(r'Lower Centaurus Crux model, $t=%.01f \, {\rm Myr}$'%(times[k]), fontsize=16)
+        plt.tight_layout()
+        plt.savefig('LCC_t_%.0f_Myr.pdf'%(times[k]))
