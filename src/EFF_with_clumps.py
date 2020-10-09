@@ -123,11 +123,21 @@ def xyz_coords(mass_association, Nclumps, a, gamma):
 
 			new_members = 1
 
-		new_member_masses = Cook_mass_fn(new_members) #in MSun implicitly
+		lower_limit_flag = 0
 
+		while lower_limit_flag == 0:
+
+			new_member_masses = new_kroupa_mass_distribution(new_members).value_in(units.MSun)
+
+			lower_limit_checks = [ 1 if m < 0.02 else 0 for m in new_member_masses]
+
+			if np.sum(lower_limit_checks) == 0:
+
+				lower_limit_flag = 1
+			
 		new_bin_mass = bin_masses[idx_bin] + np.sum(new_member_masses)
 
-		if new_bin_mass < 1.1 * allowances[idx_bin]:
+		if new_bin_mass < 1.05 * allowances[idx_bin]:
 
 			if clump_flag < Nclumps:
 				clump_flag += 1
