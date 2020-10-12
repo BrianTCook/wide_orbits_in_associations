@@ -40,12 +40,28 @@ def sigma_rho(theta_present, r, delta_r):
     
     return -gamma_present * (r/(a_present)**(2.)) * (1 + (r/a_present)**(2.))**(-gamma_present/2. - 1) * (delta_r / 10.)
 
-def log_prior(theta):
+def log_prior_uninformed(theta):
     
     rho_0, a, gamma = theta
-    if rho_0 > 0. and a > 0. and a < 200. and gamma > 0.:
+    if rho_0 > 0. and a > 0. and gamma > 0.:
         return 0.0
     return -np.inf
+
+def log_prior_informed(theta, theta_previous):
+    
+    rho_0, a, gamma = theta
+    rho_0_previous, a_previous, gamma_previous = theta_previous
+    
+    if rho_0 > 0. and a > 0. and gamma > 0.:
+        
+        rho_0_component = gaussian(rho_0, rho_0_previous, 0.2*rho_0_previous)
+        a_component = gaussian(a, a_previous, 0.2*a_previous)
+        gamma_component = gaussian(gamma, gamma_previous, 0.2*gamma_previous)
+        
+        return rho_0_component * a_component * gamma_component
+    
+    return -np.inf
+
 
 def log_likelihood(theta, r, mass_enc, mass_enc_err):
     
@@ -60,8 +76,14 @@ def log_likelihood(theta, r, mass_enc, mass_enc_err):
         return -np.inf
     return -0.5*np.sum(summand)
 
-def log_probability(theta, r, mass_enc, mass_enc_err):
-    lp = log_prior(theta)
+def log_probability_uninformed(theta, r, mass_enc, mass_enc_err):
+    lp = log_prior_uninformed(theta)
+    if not np.isfinite(lp):        
+        return -np.inf    
+    return lp + log_likelihood(theta, r, mass_enc, mass_enc_err)
+
+def log_probability_informed(theta, r, mass_enc, mass_enc_err):
+    lp = log_prior_informed(theta)
     if not np.isfinite(lp):        
         return -np.inf    
     return lp + log_likelihood(theta, r, mass_enc, mass_enc_err)
@@ -131,7 +153,14 @@ for bg_str in background_strs:
         pos = soln.x + 1e-4 * np.random.randn(16, 3)
         nwalkers, ndim = pos.shape
         
-        sampler = emcee.EnsembleSampler(nwalkers, ndim, log_probability, args=(r, mass_enc, mass_enc_err))
+        if k == 0:
+        
+            sampler = emcee.EnsembleSampler(nwalkers, ndim, log_probability_uninformed, args=(r, mass_enc, mass_enc_err))
+        
+        if k != 0:
+            
+            sampler = emcee.EnsembleSampler(nwalkers, ndim, log_probability_informed, args=(r, mass_enc, mass_enc_err))
+        
         sampler.run_mcmc(pos, 50000, progress=True)
         
         flat_samples = sampler.get_chain(discard=10000, thin=4, flat=True) 
