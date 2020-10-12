@@ -101,6 +101,7 @@ def simulation(mass_association, Nclumps, time_reversal, background):
 		channel_from_framework_to_gravity = stars_g.new_channel_to(gravity.particles)
 
 		channel_from_stellar_to_framework = stellar.particles.new_channel_to(stars_s)
+		channel_from_stellar_to_gravity = stellar.particles.new_channel_to(gravity.particles)
 
 		energy_init = gravity.particles.potential_energy() + gravity.particles.kinetic_energy()
 
@@ -145,7 +146,10 @@ def simulation(mass_association, Nclumps, time_reversal, background):
 				stellar_data[j_like_index, :len(data_t_stellar.index), :] = data_t_stellar.values
 				np.savetxt('StellarEvolution_%s_%s_frame_%s_LCC.ascii'%(forward_or_backward, background_str, str(j).rjust(5, '0')), data_t_stellar.values)
 
-				x_med, y_med, z_med = np.median(data_t_grav['x'])/1000., np.median(data_t_grav['y'])/1000., np.median(data_t_grav['z'])/1000.
+				center_of_mass = np.average(data_t_grav.values[:,1:4], axis=0, weights=data_t_grav.values[:,0])
+				print('COM (in pc): ', center_of_mass)
+
+				x_med, y_med, z_med = center_of_mass
 
 				#compute MW mass at time t
 
@@ -160,10 +164,16 @@ def simulation(mass_association, Nclumps, time_reversal, background):
 				snapshot_galaxy_masses[j_like_index] = Mgal #in MSun
 				snapshot_times[j_like_index] = t
 			
+				print('LCC mass (stellar evolution code): %.05f MSun'%(np.sum(data_t_stellar.values[:,0])))
+				print('LCC mass (gravity code): %.05f MSun'%(np.sum(data_t_grav.values[:,0])))
+				print('R_GC: %.03f pc'%(np.linalg.norm(center_of_mass)))
+				print('MW mass: %.05e MSun'%(Mgal))
+
 				j_like_index += 1
 
 			stellar.evolve_model(t)
 			channel_from_stellar_to_framework.copy()
+			channel_from_stellar_to_gravity.copy()
 
 			channel_from_framework_to_gravity.copy()
 			gravity.evolve_model(t)

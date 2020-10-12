@@ -169,6 +169,8 @@ def xyz_coords(mass_association, Nclumps, a, gamma):
 	zvals = [ j for i in zvals for j in i ]
 	star_masses = [ j for i in star_masses for j in i ]
 
+	print('total stellar mass: %.03f MSun'%(np.sum(star_masses)))
+
 	return xvals, yvals, zvals, star_masses
     
     

@@ -26,7 +26,7 @@ def new_option_parser():
 	'''
 
 	optparser = OptionParser()
-	optparser.add_option('--mass_association', dest='mass_association', type='float', default=700.)
+	optparser.add_option('--mass_association', dest='mass_association', type='float', default=740.)
 	optparser.add_option('--Nclumps', dest='Nclumps', type='int', default=4)
 
 	return optparser
