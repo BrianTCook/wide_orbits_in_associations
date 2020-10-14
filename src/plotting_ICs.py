@@ -46,8 +46,10 @@ for bg_str in background_strs:
         df_init.insert(1, 'Distance from COM', rvals, True)
         df_init = df_init.sort_values(by=['Distance from COM'])
         
-        df_solar = df_init[df_init['mass'] > 0.75]
-        df_solar = df_solar[df_solar['mass'] < 1.25]
+        df_solar = df_init[df_init['mass'] > 0.8]
+        df_solar = df_solar[df_solar['mass'] < 1.3]
+        
+        print('number of G type stars: %i'%(len(df_solar.index)))
 
         xvals_all = [ float(x)-center_of_mass[0] for x in df_init['x'].tolist() ]
         yvals_all = [ float(y)-center_of_mass[1] for y in df_init['y'].tolist() ]
