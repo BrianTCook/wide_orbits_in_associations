@@ -62,7 +62,7 @@ for bg_str in background_strs:
         plt.xlim(-100, 100)
         plt.ylim(-100, 100)
         plt.plot(xvals_all, yvals_all, color='black',marker=',',lw=0, linestyle='', label='LCC members')
-        plt.plot(xvals_solar, yvals_solar, color='red',marker='*',lw=0, linestyle='', label='Sun-like stars')
+        plt.plot(xvals_solar, yvals_solar, color='red',marker='*',lw=0, linestyle='', label='G-type stars')
         plt.annotate(r'$M_{\rm LCC} = %.03f \hspace{2mm} M_{\odot}$'%(mass_association), xy=(0.6, 0.1), xycoords='axes fraction')
         plt.annotate(r'$\rho(r) \sim (1 + (r/a)^{2})^{-\gamma/2}$', xy=(0.6, 0.05), xycoords='axes fraction')
         plt.xlabel(r'$x-{x}_{\rm COM}$ (pc)', fontsize=16)
